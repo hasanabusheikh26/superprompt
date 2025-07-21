@@ -1,4 +1,4 @@
-// Popup.js - Main frontend logic for the extension
+// Final popup.js - Production ready with simple Clerk integration
 
 class PromptEnhancer {
   constructor() {
@@ -6,13 +6,8 @@ class PromptEnhancer {
   }
 
   async init() {
-    // Initialize UI elements
     this.initElements();
-    
-    // Check authentication status
     await this.checkAuthStatus();
-    
-    // Setup event listeners
     this.setupEventListeners();
   }
 
@@ -40,29 +35,57 @@ class PromptEnhancer {
     
     // Enhancement buttons
     this.enhancementBtns = document.querySelectorAll('.enhancement-btn');
-    this.selectedEnhancement = 'improve'; // default
+    this.selectedEnhancement = 'improve';
   }
 
   async checkAuthStatus() {
     try {
-      const result = await chrome.storage.local.get(['user', 'authToken']);
+      // Check local storage first
+      const result = await chrome.storage.local.get(['user', 'authToken', 'tokenExpiry']);
       
-      if (result.user && result.authToken) {
+      if (result.authToken && result.tokenExpiry && Date.now() < result.tokenExpiry) {
         this.showAuthenticatedState(result.user);
-      } else {
-        this.showUnauthenticatedState();
+        return;
       }
+
+      // Check with backend
+      const response = await fetch('https://superprompt-lac.vercel.app/api/auth/session', {
+        method: 'GET',
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.authenticated) {
+          await this.saveAuthData(data);
+          this.showAuthenticatedState(data.user);
+          return;
+        }
+      }
+
+      this.showUnauthenticatedState();
+      
     } catch (error) {
-      console.error('Error checking auth status:', error);
+      console.error('Auth check error:', error);
       this.showUnauthenticatedState();
     }
+  }
+
+  async saveAuthData(authData) {
+    const expiryTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
+    
+    await chrome.storage.local.set({
+      user: authData.user,
+      authToken: authData.token,
+      tokenExpiry: expiryTime
+    });
   }
 
   showAuthenticatedState(user) {
     this.authScreen.classList.add('hidden');
     this.appScreen.classList.remove('hidden');
     this.userInfo.classList.remove('hidden');
-    this.userEmail.textContent = user.email || 'User';
+    this.userEmail.textContent = user.email || user.id || 'User';
   }
 
   showUnauthenticatedState() {
@@ -77,19 +100,18 @@ class PromptEnhancer {
     this.signInBtn.addEventListener('click', () => this.handleAuth('signin'));
     this.logoutBtn.addEventListener('click', () => this.handleLogout());
     
-    // Enhancement type selection
+    // Enhancement selection
     this.enhancementBtns.forEach(btn => {
       btn.addEventListener('click', (e) => {
-        // Remove active class from all buttons
         this.enhancementBtns.forEach(b => b.classList.remove('active'));
-        // Add active class to clicked button
         e.target.classList.add('active');
         this.selectedEnhancement = e.target.dataset.type;
       });
     });
     
-    // Set default active enhancement
-    this.enhancementBtns[0].classList.add('active');
+    if (this.enhancementBtns.length > 0) {
+      this.enhancementBtns[0].classList.add('active');
+    }
     
     // Main functionality
     this.enhanceBtn.addEventListener('click', () => this.enhancePrompt());
@@ -104,10 +126,12 @@ class PromptEnhancer {
 
   async handleAuth(type) {
     try {
-      // Replace with your actual Clerk domain and configuration
+      const baseUrl = 'https://modest-shrew-1.accounts.dev';
+      const redirectUrl = encodeURIComponent('https://superprompt-lac.vercel.app/auth/callback');
+      
       const authUrl = type === 'signup' 
-        ? 'https://modest-shrew-1.accounts.dev/sign-up' 
-        : 'https://modest-shrew-1.accounts.dev/sign-in';
+        ? `${baseUrl}/sign-up?redirect_url=${redirectUrl}`
+        : `${baseUrl}/sign-in?redirect_url=${redirectUrl}`;
       
       // Open auth in new tab
       const authTab = await chrome.tabs.create({ url: authUrl });
@@ -122,63 +146,54 @@ class PromptEnhancer {
   }
 
   listenForAuthCompletion(tabId) {
-    // Listen for tab updates to detect auth completion
-    const listener = async (updatedTabId, changeInfo, tab) => {
-      if (updatedTabId === tabId && changeInfo.url) {
-        // Check if redirected to success URL
-        if (changeInfo.url.includes('success') || changeInfo.url.includes('dashboard')) {
-          // Auth likely completed, verify with backend
-          await this.verifyAuthWithBackend();
-          chrome.tabs.onUpdated.removeListener(listener);
-          chrome.tabs.remove(tabId); // Close auth tab
-        }
-      }
-    };
+    let pollCount = 0;
+    const maxPolls = 30; // 1 minute max
     
-    chrome.tabs.onUpdated.addListener(listener);
-    
-    // Also listen for tab closure
-    const closeListener = (closedTabId) => {
-      if (closedTabId === tabId) {
-        chrome.tabs.onRemoved.removeListener(closeListener);
-        chrome.tabs.onUpdated.removeListener(listener);
-        // Check auth status when user returns
-        setTimeout(() => this.checkAuthStatus(), 1000);
-      }
-    };
-    
-    chrome.tabs.onRemoved.addListener(closeListener);
-  }
+    const pollForAuth = async () => {
+      try {
+        pollCount++;
+        
+        // Check if auth completed
+        const response = await fetch('https://superprompt-lac.vercel.app/api/auth/session', {
+          method: 'GET',
+          credentials: 'include'
+        });
 
-  async verifyAuthWithBackend() {
-    try {
-      // This would call your backend to verify the Clerk session
-      // For now, we'll simulate successful auth
-      const mockUser = {
-        email: 'user@example.com',
-        id: 'user_123'
-      };
-      
-      const mockToken = 'auth_token_123';
-      
-      await chrome.storage.local.set({
-        user: mockUser,
-        authToken: mockToken
-      });
-      
-      this.showAuthenticatedState(mockUser);
-      this.showSuccess('Successfully signed in!');
-      
-    } catch (error) {
-      console.error('Auth verification failed:', error);
-      this.showError('Authentication verification failed.');
-    }
+        if (response.ok) {
+          const data = await response.json();
+          if (data.authenticated) {
+            await this.saveAuthData(data);
+            this.showAuthenticatedState(data.user);
+            this.showSuccess('Successfully signed in!');
+            
+            // Close auth tab
+            try {
+              await chrome.tabs.remove(tabId);
+            } catch (e) {
+              // Tab might already be closed
+            }
+            return;
+          }
+        }
+        
+        // Continue polling
+        if (pollCount < maxPolls) {
+          setTimeout(pollForAuth, 2000);
+        }
+        
+      } catch (error) {
+        console.error('Auth polling error:', error);
+      }
+    };
+    
+    // Start polling
+    setTimeout(pollForAuth, 3000);
   }
 
   async handleLogout() {
     try {
       // Clear local storage
-      await chrome.storage.local.remove(['user', 'authToken']);
+      await chrome.storage.local.remove(['user', 'authToken', 'tokenExpiry']);
       
       // Reset UI
       this.showUnauthenticatedState();
@@ -199,7 +214,6 @@ class PromptEnhancer {
       return;
     }
 
-    // Check auth before making API call
     const authData = await chrome.storage.local.get(['authToken']);
     if (!authData.authToken) {
       this.showError('Please sign in to use prompt enhancement.');
@@ -210,45 +224,36 @@ class PromptEnhancer {
     this.clearMessages();
 
     try {
-      const enhancedPrompt = await this.callEnhancementAPI(prompt, this.selectedEnhancement);
-      this.showResult(enhancedPrompt);
+      const response = await fetch('https://superprompt-lac.vercel.app/api/enhance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          prompt: prompt,
+          enhancementType: this.selectedEnhancement
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          await this.handleLogout();
+          throw new Error('Session expired. Please sign in again.');
+        }
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      this.showResult(data.enhancedPrompt);
       this.showSuccess('Prompt enhanced successfully!');
       
     } catch (error) {
       console.error('Enhancement error:', error);
-      this.showError('Failed to enhance prompt. Please try again.');
+      this.showError(error.message || 'Failed to enhance prompt. Please try again.');
     } finally {
       this.setLoadingState(false);
     }
-  }
-
-  async callEnhancementAPI(prompt, enhancementType) {
-    const authData = await chrome.storage.local.get(['authToken']);
-    
-    // Replace with your actual API endpoint
-    const response = await fetch('https://superprompt-lac.vercel.app/api/enhance', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${authData.authToken}`
-      },
-      body: JSON.stringify({
-        prompt: prompt,
-        enhancementType: enhancementType
-      })
-    });
-
-    if (!response.ok) {
-      if (response.status === 401) {
-        // Token expired, logout user
-        await this.handleLogout();
-        throw new Error('Session expired. Please sign in again.');
-      }
-      throw new Error(`API error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data.enhancedPrompt;
   }
 
   showResult(enhancedPrompt) {
@@ -261,7 +266,6 @@ class PromptEnhancer {
       const text = this.resultText.textContent;
       await navigator.clipboard.writeText(text);
       
-      // Visual feedback
       const originalText = this.copyBtn.textContent;
       this.copyBtn.textContent = 'Copied!';
       this.copyBtn.style.background = '#059669';
@@ -293,7 +297,6 @@ class PromptEnhancer {
     this.errorState.classList.remove('hidden');
     this.successState.classList.add('hidden');
     
-    // Auto-hide after 5 seconds
     setTimeout(() => {
       this.errorState.classList.add('hidden');
     }, 5000);
@@ -304,7 +307,6 @@ class PromptEnhancer {
     this.successState.classList.remove('hidden');
     this.errorState.classList.add('hidden');
     
-    // Auto-hide after 3 seconds
     setTimeout(() => {
       this.successState.classList.add('hidden');
     }, 3000);
@@ -321,16 +323,7 @@ class PromptEnhancer {
   }
 }
 
-// Initialize the extension when DOM is loaded
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
   new PromptEnhancer();
-});
-
-// Handle messages from background script
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'authCompleted') {
-    // Refresh auth status when notified by background script
-    const enhancer = new PromptEnhancer();
-    enhancer.checkAuthStatus();
-  }
 });

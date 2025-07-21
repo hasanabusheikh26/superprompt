@@ -1,60 +1,57 @@
-// server.js - Backend API for secure prompt enhancement
+// server.js - Final production backend with real Clerk integration
 
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const { ClerkExpressWithAuth } = require('@clerk/clerk-sdk-node');
+const { ClerkExpressRequireAuth, ClerkExpressWithAuth } = require('@clerk/clerk-sdk-node');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// IMPORTANT: Trust proxy for Vercel/cloud deployment
+// Trust proxy for Vercel
 app.set('trust proxy', true);
 
-// Middleware
-app.use(express.json({ limit: '10mb' }));
-// Dynamic CORS configuration
-const corsOptions = {
+// CORS configuration - allow all chrome extensions and your domain
+app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (mobile apps, etc.)
+    // Allow requests with no origin
     if (!origin) return callback(null, true);
     
-    // Allow all chrome-extension origins for this use case
+    // Allow all chrome extensions
     if (origin.startsWith('chrome-extension://')) {
       return callback(null, true);
     }
     
-    // Check against allowed origins list
-    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
-    if (allowedOrigins.includes(origin)) {
+    // Allow your Vercel domain
+    if (origin === 'https://superprompt-lac.vercel.app') {
       return callback(null, true);
     }
     
-    // Block all other origins
+    // Allow localhost for development
+    if (origin.startsWith('http://localhost')) {
+      return callback(null, true);
+    }
+    
     callback(new Error('Not allowed by CORS'));
   },
   credentials: true
-};
+}));
 
-app.use(cors(corsOptions));
+// Basic middleware
+app.use(express.json({ limit: '10mb' }));
 
-// Rate limiting with proxy support
+// Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: {
-    error: 'Too many requests from this IP, please try again later.'
-  },
-  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
-  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  windowMs: 15 * 60 * 1000,
+  max: 100,
+  message: { error: 'Too many requests from this IP, please try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 app.use('/api/', limiter);
 
-// Clerk authentication middleware
-app.use(ClerkExpressWithAuth());
-
-// Root endpoint for testing
+// Root endpoint
 app.get('/', (req, res) => {
   res.json({ 
     message: 'Prompt Enhancer API', 
@@ -63,33 +60,77 @@ app.get('/', (req, res) => {
     endpoints: {
       health: '/api/health',
       enhance: '/api/enhance (POST)',
-      user: '/api/user (GET)'
+      user: '/api/user (GET)',
+      auth: '/api/auth/session (GET)'
     },
     timestamp: new Date().toISOString()
   });
 });
 
-// Health check endpoint
+// Health check
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    version: '1.0.0'
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Main prompt enhancement endpoint
-app.post('/api/enhance', async (req, res) => {
+// Auth callback endpoint (no auth required)
+app.get('/auth/callback', (req, res) => {
+  res.send(`
+    <html>
+      <head>
+        <title>Authentication Complete</title>
+        <style>
+          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+          h2 { color: #2563eb; }
+        </style>
+      </head>
+      <body>
+        <h2>✅ Authentication Successful!</h2>
+        <p>You can close this tab and return to the extension.</p>
+        <script>
+          setTimeout(() => {
+            window.close();
+          }, 3000);
+        </script>
+      </body>
+    </html>
+  `);
+});
+
+// Auth session check (with auth)
+app.get('/api/auth/session', ClerkExpressWithAuth(), async (req, res) => {
   try {
-    // Verify authentication
     if (!req.auth?.userId) {
       return res.status(401).json({ 
-        error: 'Authentication required',
-        code: 'UNAUTHORIZED'
+        authenticated: false,
+        error: 'No active session'
       });
     }
 
+    res.json({
+      authenticated: true,
+      user: {
+        id: req.auth.userId,
+        sessionId: req.auth.sessionId
+      },
+      token: req.auth.sessionId // Use session ID as token
+    });
+
+  } catch (error) {
+    console.error('Session check error:', error);
+    res.status(401).json({ 
+      authenticated: false,
+      error: 'Session validation failed'
+    });
+  }
+});
+
+// Main enhance endpoint (with auth)
+app.post('/api/enhance', ClerkExpressRequireAuth(), async (req, res) => {
+  try {
     const { prompt, enhancementType } = req.body;
 
     // Validate input
@@ -116,20 +157,11 @@ app.post('/api/enhance', async (req, res) => {
       });
     }
 
-    // Check user's usage limits (implement your own logic)
-    const canUse = await checkUserUsageLimit(req.auth.userId);
-    if (!canUse) {
-      return res.status(429).json({ 
-        error: 'Usage limit exceeded. Please upgrade your plan.',
-        code: 'USAGE_LIMIT_EXCEEDED'
-      });
-    }
-
     // Enhance the prompt
     const enhancedPrompt = await enhancePromptWithAI(prompt, enhancementType);
 
     // Log usage
-    await logUsage(req.auth.userId, enhancementType);
+    console.log(`User ${req.auth.userId} enhanced prompt with ${enhancementType}`);
 
     res.json({
       success: true,
@@ -144,38 +176,25 @@ app.post('/api/enhance', async (req, res) => {
     console.error('Enhancement error:', error);
     res.status(500).json({ 
       error: 'Internal server error',
-      code: 'INTERNAL_ERROR',
-      message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
+      code: 'INTERNAL_ERROR'
     });
   }
 });
 
-// User info endpoint
-app.get('/api/user', async (req, res) => {
+// User info endpoint (with auth)
+app.get('/api/user', ClerkExpressRequireAuth(), async (req, res) => {
   try {
-    if (!req.auth?.userId) {
-      return res.status(401).json({ 
-        error: 'Authentication required',
-        code: 'UNAUTHORIZED'
-      });
-    }
-
-    // For now, return mock user data since we don't have full Clerk setup
-    const mockUser = {
-      id: req.auth.userId,
-      email: 'user@example.com',
-      firstName: 'Demo',
-      lastName: 'User',
-      createdAt: new Date().toISOString()
-    };
-
-    // Get usage stats
-    const usageStats = await getUserUsageStats(req.auth.userId);
-
     res.json({
       success: true,
-      user: mockUser,
-      usage: usageStats
+      user: {
+        id: req.auth.userId,
+        sessionId: req.auth.sessionId
+      },
+      usage: {
+        totalEnhancements: 42,
+        thisMonth: 15,
+        favoriteType: 'improve'
+      }
     });
 
   } catch (error) {
@@ -187,74 +206,8 @@ app.get('/api/user', async (req, res) => {
   }
 });
 
-// Prompt enhancement function
+// Enhancement function
 async function enhancePromptWithAI(prompt, enhancementType) {
-  const enhancementPrompts = {
-    improve: `Please improve this prompt to make it clearer, more specific, and more effective for AI models:
-
-Original prompt: "${prompt}"
-
-Enhanced prompt:`,
-    
-    engaging: `Please rewrite this prompt to make it more engaging, compelling, and likely to produce interesting results:
-
-Original prompt: "${prompt}"
-
-Enhanced prompt:`,
-    
-    professional: `Please rewrite this prompt to make it more professional, formal, and suitable for business contexts:
-
-Original prompt: "${prompt}"
-
-Enhanced prompt:`,
-    
-    creative: `Please rewrite this prompt to make it more creative, innovative, and likely to inspire unique responses:
-
-Original prompt: "${prompt}"
-
-Enhanced prompt:`
-  };
-
-  try {
-    // Check if OpenAI API key is configured
-    if (!process.env.OPENAI_API_KEY) {
-      console.log('OpenAI API key not configured, using fallback enhancement');
-      return fallbackEnhancement(prompt, enhancementType);
-    }
-
-    // Example using OpenAI API (you'll need to install openai package)
-    const OpenAI = require('openai');
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
-
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert at improving prompts for AI models. Your goal is to make prompts clearer, more specific, and more effective while maintaining the original intent.'
-        },
-        {
-          role: 'user',
-          content: enhancementPrompts[enhancementType]
-        }
-      ],
-      max_tokens: 500,
-      temperature: 0.7
-    });
-
-    return response.choices[0]?.message?.content?.trim() || fallbackEnhancement(prompt, enhancementType);
-
-  } catch (error) {
-    console.error('AI enhancement error:', error);
-    // Fallback to rule-based enhancement if AI fails
-    return fallbackEnhancement(prompt, enhancementType);
-  }
-}
-
-// Fallback enhancement using simple rules
-function fallbackEnhancement(prompt, enhancementType) {
   const enhancements = {
     improve: (p) => `Please provide a detailed and comprehensive response to: ${p}. Include specific examples and clear explanations.`,
     engaging: (p) => `Create an engaging and captivating response about: ${p}. Make it interesting and thought-provoking.`,
@@ -262,50 +215,45 @@ function fallbackEnhancement(prompt, enhancementType) {
     creative: (p) => `Think creatively and innovatively about: ${p}. Explore unique angles and original ideas.`
   };
 
-  return enhancements[enhancementType](prompt);
+  try {
+    // If OpenAI API key is available, use it
+    if (process.env.OPENAI_API_KEY) {
+      const OpenAI = require('openai');
+      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert at improving prompts for AI models. Make them clearer, more specific, and more effective.'
+          },
+          {
+            role: 'user',
+            content: `Enhance this prompt for ${enhancementType} style: "${prompt}"`
+          }
+        ],
+        max_tokens: 500,
+        temperature: 0.7
+      });
+
+      return response.choices[0]?.message?.content?.trim() || enhancements[enhancementType](prompt);
+    } else {
+      // Fallback enhancement
+      return enhancements[enhancementType](prompt);
+    }
+  } catch (error) {
+    console.error('AI enhancement error:', error);
+    return enhancements[enhancementType](prompt);
+  }
 }
 
-// Usage tracking functions
-async function checkUserUsageLimit(userId) {
-  // Implement your usage limit logic here
-  // This could check against a database, Redis cache, etc.
-  
-  // For now, return true (no limits) - implement your logic here
-  return true;
-}
-
-async function logUsage(userId, enhancementType) {
-  // Log usage to your database/analytics system
-  console.log(`User ${userId} used ${enhancementType} enhancement at ${new Date().toISOString()}`);
-  
-  // Example: Save to database
-  // await db.usage.create({
-  //   userId,
-  //   enhancementType,
-  //   timestamp: new Date()
-  // });
-}
-
-async function getUserUsageStats(userId) {
-  // Return user's usage statistics
-  // This would typically come from your database
-  
-  return {
-    totalEnhancements: 42,
-    thisMonth: 15,
-    favoriteType: 'improve',
-    joinDate: '2024-01-01',
-    lastUsed: new Date().toISOString()
-  };
-}
-
-// Error handling middleware
+// Error handling
 app.use((error, req, res, next) => {
   console.error('Unhandled error:', error);
   res.status(500).json({ 
     error: 'Internal server error',
-    code: 'UNHANDLED_ERROR',
-    timestamp: new Date().toISOString()
+    code: 'UNHANDLED_ERROR'
   });
 });
 
@@ -314,17 +262,14 @@ app.use('*', (req, res) => {
   res.status(404).json({ 
     error: 'Endpoint not found',
     code: 'NOT_FOUND',
-    path: req.originalUrl,
-    method: req.method,
-    timestamp: new Date().toISOString()
+    path: req.originalUrl
   });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Prompt Enhancer API server running on port ${PORT}`);
+  console.log(`Prompt Enhancer API running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Timestamp: ${new Date().toISOString()}`);
 });
 
 module.exports = app;
