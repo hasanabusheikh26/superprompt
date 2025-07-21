@@ -9,6 +9,9 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// IMPORTANT: Trust proxy for Vercel/cloud deployment
+app.set('trust proxy', true);
+
 // Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(cors({
@@ -16,22 +19,44 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
+// Rate limiting with proxy support
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
   message: {
     error: 'Too many requests from this IP, please try again later.'
-  }
+  },
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 app.use('/api/', limiter);
 
 // Clerk authentication middleware
 app.use(ClerkExpressWithAuth());
 
+// Root endpoint for testing
+app.get('/', (req, res) => {
+  res.json({ 
+    message: 'Prompt Enhancer API', 
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      enhance: '/api/enhance (POST)',
+      user: '/api/user (GET)'
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Health check endpoint
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'healthy', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'healthy', 
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+    version: '1.0.0'
+  });
 });
 
 // Main prompt enhancement endpoint
@@ -91,14 +116,16 @@ app.post('/api/enhance', async (req, res) => {
       enhancedPrompt,
       enhancementType,
       originalLength: prompt.length,
-      enhancedLength: enhancedPrompt.length
+      enhancedLength: enhancedPrompt.length,
+      timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('Enhancement error:', error);
     res.status(500).json({ 
       error: 'Internal server error',
-      code: 'INTERNAL_ERROR'
+      code: 'INTERNAL_ERROR',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Something went wrong'
     });
   }
 });
@@ -113,21 +140,21 @@ app.get('/api/user', async (req, res) => {
       });
     }
 
-    // Get user info from Clerk
-    const user = await clerkClient.users.getUser(req.auth.userId);
-    
+    // For now, return mock user data since we don't have full Clerk setup
+    const mockUser = {
+      id: req.auth.userId,
+      email: 'user@example.com',
+      firstName: 'Demo',
+      lastName: 'User',
+      createdAt: new Date().toISOString()
+    };
+
     // Get usage stats
     const usageStats = await getUserUsageStats(req.auth.userId);
 
     res.json({
       success: true,
-      user: {
-        id: user.id,
-        email: user.emailAddresses[0]?.emailAddress,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        createdAt: user.createdAt
-      },
+      user: mockUser,
       usage: usageStats
     });
 
@@ -169,7 +196,13 @@ Enhanced prompt:`
   };
 
   try {
-    // Example using OpenAI API
+    // Check if OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      console.log('OpenAI API key not configured, using fallback enhancement');
+      return fallbackEnhancement(prompt, enhancementType);
+    }
+
+    // Example using OpenAI API (you'll need to install openai package)
     const OpenAI = require('openai');
     const openai = new OpenAI({
       apiKey: process.env.OPENAI_API_KEY
@@ -191,11 +224,10 @@ Enhanced prompt:`
       temperature: 0.7
     });
 
-    return response.choices[0]?.message?.content?.trim() || prompt;
+    return response.choices[0]?.message?.content?.trim() || fallbackEnhancement(prompt, enhancementType);
 
   } catch (error) {
     console.error('AI enhancement error:', error);
-    
     // Fallback to rule-based enhancement if AI fails
     return fallbackEnhancement(prompt, enhancementType);
   }
@@ -218,13 +250,13 @@ async function checkUserUsageLimit(userId) {
   // Implement your usage limit logic here
   // This could check against a database, Redis cache, etc.
   
-  // For now, return true (no limits)
+  // For now, return true (no limits) - implement your logic here
   return true;
 }
 
 async function logUsage(userId, enhancementType) {
   // Log usage to your database/analytics system
-  console.log(`User ${userId} used ${enhancementType} enhancement`);
+  console.log(`User ${userId} used ${enhancementType} enhancement at ${new Date().toISOString()}`);
   
   // Example: Save to database
   // await db.usage.create({
@@ -242,7 +274,8 @@ async function getUserUsageStats(userId) {
     totalEnhancements: 42,
     thisMonth: 15,
     favoriteType: 'improve',
-    joinDate: '2024-01-01'
+    joinDate: '2024-01-01',
+    lastUsed: new Date().toISOString()
   };
 }
 
@@ -251,7 +284,8 @@ app.use((error, req, res, next) => {
   console.error('Unhandled error:', error);
   res.status(500).json({ 
     error: 'Internal server error',
-    code: 'UNHANDLED_ERROR'
+    code: 'UNHANDLED_ERROR',
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -259,7 +293,10 @@ app.use((error, req, res, next) => {
 app.use('*', (req, res) => {
   res.status(404).json({ 
     error: 'Endpoint not found',
-    code: 'NOT_FOUND'
+    code: 'NOT_FOUND',
+    path: req.originalUrl,
+    method: req.method,
+    timestamp: new Date().toISOString()
   });
 });
 
@@ -267,6 +304,7 @@ app.use('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Prompt Enhancer API server running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`Timestamp: ${new Date().toISOString()}`);
 });
 
 module.exports = app;
