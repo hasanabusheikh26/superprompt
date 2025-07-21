@@ -166,7 +166,7 @@ class BackgroundManager {
       const authData = await chrome.storage.local.get(['authToken']);
       
       // Call your secure backend API
-      const response = await fetch('https://your-api-domain.com/api/enhance', {
+      const response = await fetch('https://superprompt-lac.vercel.app/api/enhance', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
