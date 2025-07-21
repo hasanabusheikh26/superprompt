@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
-  "name": "SuperPrompt",
+  "name": "AI Prompt Enhancer",
   "version": "1.0.0",
-  "description": "Enhance any text on any website instantly",
+  "description": "Enhance any AI prompt on any website for better results",
   "permissions": [
-    "activeTab"
+    "activeTab",
+    "storage"
   ],
   "host_permissions": [
     "https://superprompt-lac.vercel.app/*"
@@ -20,11 +21,18 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "SuperPrompt"
+    "default_title": "AI Prompt Enhancer",
+    "default_popup": "popup.html"
   },
   "icons": {
     "16": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
-  }
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["icon.png"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

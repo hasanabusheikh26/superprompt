@@ -4,295 +4,51 @@
   <meta charset="utf-8">
   <style>
     body {
-      width: 400px;
-      min-height: 500px;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #f8f9fa;
-    }
-
-    .header {
-      background: #2563eb;
-      color: white;
-      padding: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .logo {
-      display: flex;
-      align-items: center;
-      font-weight: 600;
-      font-size: 16px;
-    }
-
-    .logo::before {
-      content: "🚀";
-      margin-right: 8px;
-    }
-
-    .user-info {
-      font-size: 12px;
-      opacity: 0.9;
-    }
-
-    .container {
+      width: 300px;
       padding: 20px;
-    }
-
-    .auth-container {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+      color: white;
       text-align: center;
-      padding: 40px 20px;
     }
-
-    .auth-card {
-      background: white;
-      border-radius: 12px;
-      padding: 32px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 20px;
+    
+    .icon {
+      font-size: 48px;
+      margin-bottom: 16px;
     }
-
-    .feature-list {
-      text-align: left;
-      margin: 24px 0;
-    }
-
-    .feature-item {
-      display: flex;
-      align-items: center;
-      margin: 12px 0;
-      font-size: 14px;
-      color: #4b5563;
-    }
-
-    .feature-item::before {
-      content: "✓";
-      color: #10b981;
-      font-weight: bold;
-      margin-right: 8px;
-    }
-
-    .btn {
-      background: #2563eb;
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 500;
-      width: 100%;
-      margin: 8px 0;
-      transition: background 0.2s;
-    }
-
-    .btn:hover {
-      background: #1d4ed8;
-    }
-
-    .btn-secondary {
-      background: #6b7280;
-      color: white;
-    }
-
-    .btn-secondary:hover {
-      background: #4b5563;
-    }
-
-    .btn:disabled {
-      background: #d1d5db;
-      cursor: not-allowed;
-    }
-
-    .prompt-input {
-      width: 100%;
-      min-height: 100px;
-      padding: 12px;
-      border: 1px solid #d1d5db;
-      border-radius: 8px;
-      font-size: 14px;
-      resize: vertical;
-      font-family: inherit;
-      box-sizing: border-box;
-    }
-
-    .enhancement-options {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin: 16px 0;
-    }
-
-    .enhancement-btn {
-      padding: 8px 12px;
-      border: 1px solid #d1d5db;
-      background: white;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      transition: all 0.2s;
-    }
-
-    .enhancement-btn:hover {
-      border-color: #2563eb;
-      color: #2563eb;
-    }
-
-    .enhancement-btn.active {
-      background: #2563eb;
-      color: white;
-      border-color: #2563eb;
-    }
-
-    .result-container {
-      margin-top: 16px;
-      padding: 16px;
-      background: white;
-      border-radius: 8px;
-      border: 1px solid #e5e7eb;
-    }
-
-    .result-text {
-      font-size: 14px;
-      line-height: 1.5;
+    
+    .title {
+      font-size: 18px;
+      font-weight: 600;
       margin-bottom: 12px;
     }
-
-    .copy-btn {
-      background: #10b981;
-      color: white;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 500;
-    }
-
-    .copy-btn:hover {
-      background: #059669;
-    }
-
-    .loading {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-    }
-
-    .spinner {
-      width: 20px;
-      height: 20px;
-      border: 2px solid #f3f4f6;
-      border-top: 2px solid #2563eb;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .error {
-      background: #fef2f2;
-      color: #dc2626;
-      padding: 12px;
-      border-radius: 8px;
-      margin: 16px 0;
+    
+    .subtitle {
       font-size: 14px;
-      border: 1px solid #fecaca;
+      opacity: 0.9;
+      line-height: 1.4;
+      margin-bottom: 20px;
     }
-
-    .success {
-      background: #f0fdf4;
-      color: #166534;
-      padding: 12px;
-      border-radius: 8px;
-      margin: 16px 0;
-      font-size: 14px;
-      border: 1px solid #bbf7d0;
-    }
-
-    .hidden {
-      display: none;
-    }
-
-    .logout-btn {
-      background: none;
-      border: none;
-      color: white;
-      cursor: pointer;
-      font-size: 12px;
-      opacity: 0.8;
-      padding: 4px 8px;
-      border-radius: 4px;
-    }
-
-    .logout-btn:hover {
-      opacity: 1;
+    
+    .instruction {
       background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 13px;
+      line-height: 1.4;
     }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="logo">Prompt Enhancer</div>
-    <div id="userInfo" class="user-info hidden">
-      <div id="userEmail"></div>
-      <button id="logoutBtn" class="logout-btn">Logout</button>
-    </div>
+  <div class="icon">🚀</div>
+  <div class="title">AI Prompt Enhancer</div>
+  <div class="subtitle">
+    Enhance your AI prompts for better results
   </div>
-
-  <!-- Auth Screen -->
-  <div id="authScreen" class="auth-container">
-    <div class="auth-card">
-      <h2 style="margin-top: 0; color: #1f2937;">Sign up to unlock AI features</h2>
-      <div class="feature-list">
-        <div class="feature-item">Enhance prompts instantly</div>
-        <div class="feature-item">Multiple enhancement styles</div>
-        <div class="feature-item">Copy improved prompts</div>
-        <div class="feature-item">Prompt history & favorites</div>
-      </div>
-      <button id="signUpBtn" class="btn">Sign Up</button>
-      <button id="signInBtn" class="btn btn-secondary">Already have an account? Sign In</button>
-    </div>
+  <div class="instruction">
+    💡 <strong>How to use:</strong><br>
+    Highlight any prompt text on any website, then click the floating icon to enhance it!
   </div>
-
-  <!-- Main App Screen -->
-  <div id="appScreen" class="container hidden">
-    <textarea 
-      id="promptInput" 
-      class="prompt-input" 
-      placeholder="Enter your prompt here... (e.g., 'Write a blog post about AI')"
-    ></textarea>
-
-    <div class="enhancement-options">
-      <button class="enhancement-btn" data-type="improve">✨ Improve it</button>
-      <button class="enhancement-btn" data-type="engaging">🎯 Make engaging</button>
-      <button class="enhancement-btn" data-type="professional">💼 Professional</button>
-      <button class="enhancement-btn" data-type="creative">🎨 Creative</button>
-    </div>
-
-    <button id="enhanceBtn" class="btn">Enhance Prompt</button>
-
-    <div id="loadingState" class="loading hidden">
-      <div class="spinner"></div>
-      <span style="margin-left: 8px;">Enhancing your prompt...</span>
-    </div>
-
-    <div id="errorState" class="error hidden"></div>
-    <div id="successState" class="success hidden"></div>
-
-    <div id="resultContainer" class="result-container hidden">
-      <div id="resultText" class="result-text"></div>
-      <button id="copyBtn" class="copy-btn">Copy Enhanced Prompt</button>
-    </div>
-  </div>
-
-  <script src="popup.js"></script>
 </body>
 </html>

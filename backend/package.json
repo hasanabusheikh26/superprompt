@@ -1,7 +1,7 @@
 {
-    "name": "text-enhancer-api",
+    "name": "ai-prompt-enhancer-api",
     "version": "1.0.0",
-    "description": "Simple text enhancement API",
+    "description": "Backend API for AI Prompt Enhancer Chrome Extension",
     "main": "server.js",
     "scripts": {
       "start": "node server.js",

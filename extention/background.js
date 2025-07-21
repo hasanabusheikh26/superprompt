@@ -1,7 +1,7 @@
-// Simple background.js - Minimal functionality
+// background.js - Service Worker for AI Prompt Enhancer
 
 chrome.runtime.onInstalled.addListener(() => {
-  console.log('Text Enhancer extension installed');
+  console.log('AI Prompt Enhancer extension installed');
 });
 
 // Handle messages if needed
