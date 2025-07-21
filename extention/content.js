@@ -45,12 +45,6 @@ class TextEnhancer {
         box-shadow: 0 6px 25px rgba(0,0,0,0.4);
       }
 
-      .text-enhancer-icon::before {
-        content: "✨";
-        font-size: 20px;
-        color: white;
-      }
-
       .text-enhancer-modal {
         position: fixed;
         top: 50%;
@@ -329,6 +323,18 @@ class TextEnhancer {
     this.floatingIcon.className = 'text-enhancer-icon';
     this.floatingIcon.style.left = `${rect.left + rect.width / 2 - 20}px`;
     this.floatingIcon.style.top = `${rect.top - 50 + window.scrollY}px`;
+
+    // Create icon image element
+    const iconImg = document.createElement('img');
+    iconImg.src = chrome.runtime.getURL('icon.png');
+    iconImg.style.cssText = `
+      width: 24px;
+      height: 24px;
+      filter: brightness(0) invert(1);
+      pointer-events: none;
+    `;
+    
+    this.floatingIcon.appendChild(iconImg);
 
     this.floatingIcon.addEventListener('click', (e) => {
       e.stopPropagation();
