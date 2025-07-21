@@ -2,36 +2,29 @@
   "manifest_version": 3,
   "name": "SuperPrompt",
   "version": "1.0.0",
-  "description": "Grammarly for AI prompts - enhance your prompts instantly",
+  "description": "Enhance any text on any website instantly",
   "permissions": [
-    "storage",
-    "activeTab",
-    "tabs"
+    "activeTab"
   ],
   "host_permissions": [
-    "https://superprompt-lac.vercel.app/*",
-    "https://modest-shrew-1.accounts.dev/*"
+    "https://superprompt-lac.vercel.app/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
   ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_popup": "popup.html",
-    "default_title": "SuperPrompt",
-    "default_icon": {
-      "16": "icon.png",
-      "32": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
-    }
+    "default_title": "SuperPrompt"
   },
   "icons": {
     "16": "icon.png",
-    "32": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
-  },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }

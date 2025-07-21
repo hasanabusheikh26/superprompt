@@ -1,9 +1,8 @@
-// server.js - Final production backend with real Clerk integration
+// Simple server.js - No authentication, just text enhancement
 
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
-const { ClerkExpressRequireAuth, ClerkExpressWithAuth } = require('@clerk/clerk-sdk-node');
 require('dotenv').config();
 
 const app = express();
@@ -12,40 +11,20 @@ const PORT = process.env.PORT || 3000;
 // Trust proxy for Vercel
 app.set('trust proxy', true);
 
-// CORS configuration - allow all chrome extensions and your domain
+// CORS - allow all origins for simplicity
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin
-    if (!origin) return callback(null, true);
-    
-    // Allow all chrome extensions
-    if (origin.startsWith('chrome-extension://')) {
-      return callback(null, true);
-    }
-    
-    // Allow your Vercel domain
-    if (origin === 'https://superprompt-lac.vercel.app') {
-      return callback(null, true);
-    }
-    
-    // Allow localhost for development
-    if (origin.startsWith('http://localhost')) {
-      return callback(null, true);
-    }
-    
-    callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true
+  origin: '*',
+  credentials: false
 }));
 
 // Basic middleware
 app.use(express.json({ limit: '10mb' }));
 
-// Rate limiting
+// Rate limiting - generous for testing
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
-  message: { error: 'Too many requests from this IP, please try again later.' },
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 1000, // Allow 1000 requests per 15 minutes
+  message: { error: 'Too many requests, please try again later.' },
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -54,14 +33,12 @@ app.use('/api/', limiter);
 // Root endpoint
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Prompt Enhancer API', 
+    message: 'Prompt Enhancer API - Simple Version', 
     version: '1.0.0',
     status: 'running',
     endpoints: {
       health: '/api/health',
-      enhance: '/api/enhance (POST)',
-      user: '/api/user (GET)',
-      auth: '/api/auth/session (GET)'
+      enhance: '/api/enhance (POST)'
     },
     timestamp: new Date().toISOString()
   });
@@ -71,180 +48,125 @@ app.get('/', (req, res) => {
 app.get('/api/health', (req, res) => {
   res.json({ 
     status: 'healthy', 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
+    timestamp: new Date().toISOString()
   });
 });
 
-// Auth callback endpoint (no auth required)
-app.get('/auth/callback', (req, res) => {
-  res.send(`
-    <html>
-      <head>
-        <title>Authentication Complete</title>
-        <style>
-          body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-          h2 { color: #2563eb; }
-        </style>
-      </head>
-      <body>
-        <h2>✅ Authentication Successful!</h2>
-        <p>You can close this tab and return to the extension.</p>
-        <script>
-          setTimeout(() => {
-            window.close();
-          }, 3000);
-        </script>
-      </body>
-    </html>
-  `);
-});
-
-// Auth session check (with auth)
-app.get('/api/auth/session', ClerkExpressWithAuth(), async (req, res) => {
+// Main enhance endpoint - NO AUTH REQUIRED
+app.post('/api/enhance', async (req, res) => {
   try {
-    if (!req.auth?.userId) {
-      return res.status(401).json({ 
-        authenticated: false,
-        error: 'No active session'
-      });
-    }
-
-    res.json({
-      authenticated: true,
-      user: {
-        id: req.auth.userId,
-        sessionId: req.auth.sessionId
-      },
-      token: req.auth.sessionId // Use session ID as token
-    });
-
-  } catch (error) {
-    console.error('Session check error:', error);
-    res.status(401).json({ 
-      authenticated: false,
-      error: 'Session validation failed'
-    });
-  }
-});
-
-// Main enhance endpoint (with auth)
-app.post('/api/enhance', ClerkExpressRequireAuth(), async (req, res) => {
-  try {
-    const { prompt, enhancementType } = req.body;
+    const { text, enhancementType = 'improve' } = req.body;
 
     // Validate input
-    if (!prompt || typeof prompt !== 'string') {
+    if (!text || typeof text !== 'string') {
       return res.status(400).json({ 
-        error: 'Prompt is required and must be a string',
-        code: 'INVALID_PROMPT'
+        error: 'Text is required and must be a string'
       });
     }
 
-    if (prompt.length > 10000) {
+    if (text.length > 5000) {
       return res.status(400).json({ 
-        error: 'Prompt too long. Maximum 10,000 characters.',
-        code: 'PROMPT_TOO_LONG'
+        error: 'Text too long. Maximum 5,000 characters.'
       });
     }
 
-    const validEnhancements = ['improve', 'engaging', 'professional', 'creative'];
-    if (!enhancementType || !validEnhancements.includes(enhancementType)) {
-      return res.status(400).json({ 
-        error: 'Invalid enhancement type',
-        code: 'INVALID_ENHANCEMENT_TYPE',
-        validTypes: validEnhancements
-      });
-    }
-
-    // Enhance the prompt
-    const enhancedPrompt = await enhancePromptWithAI(prompt, enhancementType);
-
-    // Log usage
-    console.log(`User ${req.auth.userId} enhanced prompt with ${enhancementType}`);
+    // Enhance the text
+    const enhancedText = await enhanceText(text, enhancementType);
 
     res.json({
       success: true,
-      enhancedPrompt,
-      enhancementType,
-      originalLength: prompt.length,
-      enhancedLength: enhancedPrompt.length,
+      originalText: text,
+      enhancedText: enhancedText,
+      enhancementType: enhancementType,
       timestamp: new Date().toISOString()
     });
 
   } catch (error) {
     console.error('Enhancement error:', error);
     res.status(500).json({ 
-      error: 'Internal server error',
-      code: 'INTERNAL_ERROR'
+      error: 'Failed to enhance text. Please try again.'
     });
   }
 });
 
-// User info endpoint (with auth)
-app.get('/api/user', ClerkExpressRequireAuth(), async (req, res) => {
-  try {
-    res.json({
-      success: true,
-      user: {
-        id: req.auth.userId,
-        sessionId: req.auth.sessionId
-      },
-      usage: {
-        totalEnhancements: 42,
-        thisMonth: 15,
-        favoriteType: 'improve'
-      }
-    });
-
-  } catch (error) {
-    console.error('User info error:', error);
-    res.status(500).json({ 
-      error: 'Failed to get user information',
-      code: 'USER_INFO_ERROR'
-    });
-  }
-});
-
-// Enhancement function
-async function enhancePromptWithAI(prompt, enhancementType) {
+// Text enhancement function
+async function enhanceText(text, enhancementType) {
+  // Simple rule-based enhancement (works without OpenAI)
   const enhancements = {
-    improve: (p) => `Please provide a detailed and comprehensive response to: ${p}. Include specific examples and clear explanations.`,
-    engaging: (p) => `Create an engaging and captivating response about: ${p}. Make it interesting and thought-provoking.`,
-    professional: (p) => `Provide a professional analysis of: ${p}. Use formal language and structure your response clearly.`,
-    creative: (p) => `Think creatively and innovatively about: ${p}. Explore unique angles and original ideas.`
+    improve: (t) => {
+      // Make text more detailed and clear
+      if (t.length < 50) {
+        return `${t} This statement provides a clear and concise overview of the topic, offering valuable insights that can be further explored for deeper understanding.`;
+      }
+      return `Enhanced version: ${t} (This text has been improved for clarity and readability)`;
+    },
+    
+    professional: (t) => {
+      // Make text more formal
+      const professionalText = t
+        .replace(/\bi\b/gi, 'I')
+        .replace(/\bwanna\b/gi, 'want to')
+        .replace(/\bgonna\b/gi, 'going to')
+        .replace(/\bcant\b/gi, 'cannot')
+        .replace(/\bdont\b/gi, 'do not');
+      return `${professionalText}. Furthermore, this approach ensures professional standards are maintained throughout the process.`;
+    },
+    
+    creative: (t) => {
+      // Make text more creative and engaging
+      const creativity = [
+        '✨ Imagine this: ',
+        '🚀 Picture this scenario: ',
+        '💡 Here\'s an interesting perspective: ',
+        '🎭 Consider this creative angle: '
+      ];
+      const prefix = creativity[Math.floor(Math.random() * creativity.length)];
+      return `${prefix}${t} This opens up exciting possibilities for innovation and creative exploration.`;
+    },
+    
+    engaging: (t) => {
+      // Make text more engaging
+      return `Did you know that ${t.toLowerCase()}? This fascinating insight reveals something truly remarkable about our world and invites us to explore further!`;
+    }
   };
 
   try {
-    // If OpenAI API key is available, use it
+    // If OpenAI API key is available, use AI enhancement
     if (process.env.OPENAI_API_KEY) {
       const OpenAI = require('openai');
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+      const prompts = {
+        improve: `Improve this text to make it clearer and more effective: "${text}"`,
+        professional: `Rewrite this text in a professional, formal tone: "${text}"`,
+        creative: `Rewrite this text to be more creative and engaging: "${text}"`,
+        engaging: `Make this text more engaging and interesting to read: "${text}"`
+      };
+
       const response = await openai.chat.completions.create({
-        model: 'gpt-4',
+        model: 'gpt-3.5-turbo',
         messages: [
           {
             role: 'system',
-            content: 'You are an expert at improving prompts for AI models. Make them clearer, more specific, and more effective.'
+            content: 'You are a text enhancement assistant. Improve the given text according to the requested style.'
           },
           {
             role: 'user',
-            content: `Enhance this prompt for ${enhancementType} style: "${prompt}"`
+            content: prompts[enhancementType] || prompts.improve
           }
         ],
-        max_tokens: 500,
+        max_tokens: 300,
         temperature: 0.7
       });
 
-      return response.choices[0]?.message?.content?.trim() || enhancements[enhancementType](prompt);
+      return response.choices[0]?.message?.content?.trim() || enhancements[enhancementType](text);
     } else {
-      // Fallback enhancement
-      return enhancements[enhancementType](prompt);
+      // Fallback to rule-based enhancement
+      return enhancements[enhancementType] ? enhancements[enhancementType](text) : enhancements.improve(text);
     }
   } catch (error) {
-    console.error('AI enhancement error:', error);
-    return enhancements[enhancementType](prompt);
+    console.error('AI enhancement failed, using fallback:', error);
+    return enhancements[enhancementType] ? enhancements[enhancementType](text) : enhancements.improve(text);
   }
 }
 
@@ -252,23 +174,20 @@ async function enhancePromptWithAI(prompt, enhancementType) {
 app.use((error, req, res, next) => {
   console.error('Unhandled error:', error);
   res.status(500).json({ 
-    error: 'Internal server error',
-    code: 'UNHANDLED_ERROR'
+    error: 'Internal server error'
   });
 });
 
 // 404 handler
 app.use('*', (req, res) => {
   res.status(404).json({ 
-    error: 'Endpoint not found',
-    code: 'NOT_FOUND',
-    path: req.originalUrl
+    error: 'Endpoint not found'
   });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Prompt Enhancer API running on port ${PORT}`);
+  console.log(`Simple Prompt Enhancer API running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
