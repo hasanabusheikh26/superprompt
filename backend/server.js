@@ -14,10 +14,30 @@ app.set('trust proxy', true);
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
-app.use(cors({
-  origin: process.env.ALLOWED_ORIGINS?.split(',') || ['chrome-extension://*'],
+// Dynamic CORS configuration
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, etc.)
+    if (!origin) return callback(null, true);
+    
+    // Allow all chrome-extension origins for this use case
+    if (origin.startsWith('chrome-extension://')) {
+      return callback(null, true);
+    }
+    
+    // Check against allowed origins list
+    const allowedOrigins = process.env.ALLOWED_ORIGINS?.split(',') || [];
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    
+    // Block all other origins
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
 
 // Rate limiting with proxy support
 const limiter = rateLimit({
