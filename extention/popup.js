@@ -106,8 +106,8 @@ class PromptEnhancer {
     try {
       // Replace with your actual Clerk domain and configuration
       const authUrl = type === 'signup' 
-        ? 'https://your-clerk-domain.clerk.accounts.dev/sign-up' 
-        : 'https://your-clerk-domain.clerk.accounts.dev/sign-in';
+        ? 'https://modest-shrew-1.accounts.dev/sign-up' 
+        : 'https://modest-shrew-1.accounts.dev/sign-in';
       
       // Open auth in new tab
       const authTab = await chrome.tabs.create({ url: authUrl });
@@ -226,7 +226,7 @@ class PromptEnhancer {
     const authData = await chrome.storage.local.get(['authToken']);
     
     // Replace with your actual API endpoint
-    const response = await fetch('https://your-api-domain.com/api/enhance', {
+    const response = await fetch('https://superprompt-lac.vercel.app/api/enhance', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
