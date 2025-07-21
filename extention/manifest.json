@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "AI Prompt Enhancer",
+  "name": "SuperPrompt",
   "version": "1.0.0",
   "description": "Enhance any AI prompt on any website for better results",
   "permissions": [
@@ -21,7 +21,7 @@
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "AI Prompt Enhancer",
+    "default_title": "SuperPrompt",
     "default_popup": "popup.html"
   },
   "icons": {
