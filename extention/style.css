@@ -1,0 +1,212 @@
+/* style.css - Additional styles for the Chrome extension */
+
+/* Animation keyframes */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Enhanced animations */
+.auth-card {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.result-container {
+  animation: slideIn 0.4s ease-out;
+}
+
+.loading .spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Hover effects */
+.enhancement-btn {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.enhancement-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(37, 99, 235, 0.1), transparent);
+  transition: left 0.5s;
+}
+
+.enhancement-btn:hover::before {
+  left: 100%;
+}
+
+/* Focus states for accessibility */
+.btn:focus,
+.enhancement-btn:focus,
+.prompt-input:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Success/Error message animations */
+.success,
+.error {
+  animation: fadeIn 0.3s ease-out;
+  position: relative;
+}
+
+.success::before {
+  content: '✓';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: bold;
+}
+
+.error::before {
+  content: '⚠';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: bold;
+}
+
+.success,
+.error {
+  padding-left: 36px;
+}
+
+/* Copy button success state */
+.copy-btn.copied {
+  background: #059669 !important;
+  transform: scale(0.95);
+  transition: all 0.2s ease;
+}
+
+/* Loading pulse animation */
+.loading-text {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+/* Enhanced prompt input */
+.prompt-input:placeholder-shown {
+  border-color: #d1d5db;
+}
+
+.prompt-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 400px) {
+  body {
+    width: 350px;
+  }
+  
+  .container {
+    padding: 16px;
+  }
+  
+  .enhancement-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Dark mode support (if needed) */
+@media (prefers-color-scheme: dark) {
+  body {
+    background: #1f2937;
+    color: #f9fafb;
+  }
+  
+  .auth-card,
+  .result-container {
+    background: #374151;
+    border-color: #4b5563;
+  }
+  
+  .prompt-input {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .enhancement-btn {
+    background: #374151;
+    border-color: #4b5563;
+    color: #f9fafb;
+  }
+  
+  .enhancement-btn:hover {
+    border-color: #2563eb;
+    background: #4b5563;
+  }
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .btn {
+    border: 2px solid currentColor;
+  }
+  
+  .enhancement-btn {
+    border: 2px solid currentColor;
+  }
+  
+  .prompt-input {
+    border: 2px solid currentColor;
+  }
+}
+
+/* Print styles (if needed) */
+@media print {
+  .header,
+  .btn,
+  .enhancement-options {
+    display: none;
+  }
+  
+  .result-container {
+    border: 1px solid #000;
+    break-inside: avoid;
+  }
+}
