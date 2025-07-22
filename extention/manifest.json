@@ -17,12 +17,7 @@
       "js": ["content.js"],
       "css": ["content.css"],
       "all_frames": false,
-      "run_at": "document_idle",
-      "exclude_matches": [
-        "*://chrome://*/*",
-        "*://chrome-extension://*/*",
-        "*://moz-extension://*/*"
-      ]
+      "run_at": "document_idle"
     }
   ],
   "background": {
