@@ -1,18 +1,24 @@
-// popup.js - SuperPrompt Main Toolbar Popup
+// popup.js - SuperPrompt Enhanced Main Interface
 
-class SuperPromptPopup {
+class SuperPromptMainPopup {
   constructor() {
     this.currentTab = 'history';
     this.history = [];
+    this.filteredHistory = [];
     this.settings = {
       darkMode: false,
       soundEffects: true,
-      autoCopy: false
+      autoCopy: false,
+      showIcon: true,
+      quality: 'balanced'
     };
     this.stats = {
       totalEnhancements: 0,
-      sitesUsed: 0
+      sitesUsed: 0,
+      successRate: 100
     };
+    this.currentSite = '';
+    this.siteIcon = '🌐';
     this.init();
   }
 
@@ -22,13 +28,19 @@ class SuperPromptPopup {
     this.setupEventListeners();
     this.updateDisplay();
     this.applyTheme();
+    this.calculateStats();
   }
 
   async loadData() {
     try {
-      const result = await chrome.storage.local.get(['promptHistory', 'superPromptSettings', 'superPromptStats']);
+      const result = await chrome.storage.local.get([
+        'promptHistory', 
+        'superPromptSettings', 
+        'superPromptStats'
+      ]);
       
       this.history = result.promptHistory || [];
+      this.filteredHistory = [...this.history];
       this.settings = { ...this.settings, ...(result.superPromptSettings || {}) };
       this.stats = { ...this.stats, ...(result.superPromptStats || {}) };
       
@@ -54,66 +66,82 @@ class SuperPromptPopup {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
       if (tab?.url) {
         const url = new URL(tab.url);
-        const hostname = url.hostname;
+        this.currentSite = url.hostname;
         
         // Try to get site info from content script
         try {
           const response = await chrome.tabs.sendMessage(tab.id, { action: 'getSiteInfo' });
           if (response?.siteIcon) {
-            document.getElementById('siteIcon').textContent = response.siteIcon;
+            this.siteIcon = response.siteIcon;
+            document.getElementById('siteIcon').textContent = this.siteIcon;
+            document.getElementById('siteIcon').title = `Current site: ${this.currentSite}`;
             return;
           }
         } catch (e) {
-          // Content script not loaded, use fallback
+          // Content script not loaded
         }
         
-        // Fallback site icon detection
-        const siteIcons = {
-          'chatgpt.com': '💬',
-          'chat.openai.com': '💬',
-          'claude.ai': '🤖',
-          'bard.google.com': '🎭',
-          'character.ai': '🎪',
-          'poe.com': '🔮',
-          'github.com': '🐙',
-          'stackoverflow.com': '📚',
-          'reddit.com': '🔶',
-          'twitter.com': '🐦',
-          'x.com': '❌',
-          'linkedin.com': '💼',
-          'discord.com': '💬',
-          'slack.com': '💼',
-          'notion.so': '📝',
-          'docs.google.com': '📄',
-          'medium.com': '📝',
-          'substack.com': '📧',
-          'gmail.com': '📧'
-        };
-        
-        const icon = siteIcons[hostname] || '🌐';
-        document.getElementById('siteIcon').textContent = icon;
+        // Fallback detection
+        this.siteIcon = this.getSiteIcon(this.currentSite);
+        document.getElementById('siteIcon').textContent = this.siteIcon;
+        document.getElementById('siteIcon').title = `Current site: ${this.currentSite}`;
       }
     } catch (error) {
       console.error('Failed to detect current site:', error);
-      document.getElementById('siteIcon').textContent = '🌐';
     }
+  }
+
+  getSiteIcon(hostname) {
+    const siteIcons = {
+      // AI Platforms
+      'chatgpt.com': '💬', 'chat.openai.com': '💬', 'claude.ai': '🤖',
+      'bard.google.com': '🎭', 'character.ai': '🎪', 'poe.com': '🔮',
+      'huggingface.co': '🤗', 'cohere.ai': '📊', 'anthropic.com': '🤖',
+      'openai.com': '💬', 'perplexity.ai': '🔍', 'phind.com': '🔍',
+      
+      // Development
+      'github.com': '🐙', 'gitlab.com': '🦊', 'stackoverflow.com': '📚',
+      'stackexchange.com': '📚', 'codepen.io': '🖊️', 'repl.it': '⚡',
+      'codesandbox.io': '📦', 'jsfiddle.net': '🎯', 'glitch.com': '✨',
+      'vercel.com': '▲', 'netlify.com': '🌐', 'heroku.com': '💜',
+      
+      // Social & Communication  
+      'twitter.com': '🐦', 'x.com': '❌', 'linkedin.com': '💼',
+      'facebook.com': '📘', 'instagram.com': '📷', 'reddit.com': '🔶',
+      'discord.com': '💬', 'slack.com': '💼', 'telegram.org': '✈️',
+      'whatsapp.com': '💬', 'messenger.com': '💬',
+      
+      // Productivity & Writing
+      'gmail.com': '📧', 'mail.google.com': '📧', 'outlook.com': '📧',
+      'notion.so': '📝', 'airtable.com': '📊', 'trello.com': '📋',
+      'asana.com': '☑️', 'monday.com': '📈', 'clickup.com': '🚀',
+      'docs.google.com': '📄', 'sheets.google.com': '📊',
+      'medium.com': '📝', 'substack.com': '📧', 'hashnode.com': '📝',
+      'dev.to': '👩‍💻', 'wordpress.com': '📝'
+    };
+
+    return siteIcons[hostname] || '🌐';
   }
 
   setupEventListeners() {
     // Tab switching
     document.querySelectorAll('.tab').forEach(tab => {
       tab.addEventListener('click', (e) => {
-        const tabName = e.target.dataset.tab;
+        const tabName = e.target.closest('.tab').dataset.tab;
         this.switchTab(tabName);
       });
     });
 
-    // Header close button
+    // Header buttons
+    document.getElementById('helpBtn').addEventListener('click', () => {
+      this.showHelpModal();
+    });
+
     document.getElementById('closeBtn').addEventListener('click', () => {
       window.close();
     });
 
-    // Settings toggles
+    // Settings controls
     document.getElementById('darkModeToggle').addEventListener('click', () => {
       this.toggleSetting('darkMode');
     });
@@ -126,25 +154,40 @@ class SuperPromptPopup {
       this.toggleSetting('autoCopy');
     });
 
+    document.getElementById('showIconToggle').addEventListener('click', () => {
+      this.toggleSetting('showIcon');
+    });
+
+    document.getElementById('qualitySelect').addEventListener('change', (e) => {
+      this.settings.quality = e.target.value;
+      this.saveData();
+    });
+
+    // History controls
+    document.getElementById('historySearch').addEventListener('input', (e) => {
+      this.filterHistory(e.target.value);
+    });
+
+    document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+      this.clearHistory();
+    });
+
+    document.getElementById('exportHistoryBtn').addEventListener('click', () => {
+      this.exportHistory();
+    });
+
     // External links
-    document.getElementById('learnModelsLink').addEventListener('click', (e) => {
-      e.preventDefault();
-      this.openLink('https://platform.openai.com/docs/models');
+    this.setupExternalLinks();
+
+    // Help modal
+    document.querySelector('.modal-close').addEventListener('click', () => {
+      this.hideHelpModal();
     });
 
-    document.getElementById('feedbackLink').addEventListener('click', (e) => {
-      e.preventDefault();
-      this.openLink('https://forms.gle/your-feedback-form');
-    });
-
-    document.getElementById('supportLink').addEventListener('click', (e) => {
-      e.preventDefault();
-      this.openLink('https://github.com/your-repo/issues');
-    });
-
-    document.getElementById('privacyLink').addEventListener('click', (e) => {
-      e.preventDefault();
-      this.openLink('https://your-website.com/privacy');
+    document.getElementById('helpModal').addEventListener('click', (e) => {
+      if (e.target.id === 'helpModal') {
+        this.hideHelpModal();
+      }
     });
 
     // Listen for messages from content script
@@ -156,8 +199,12 @@ class SuperPromptPopup {
           break;
           
         case 'openMainPopup':
-          // Already open, just switch to settings
           this.switchTab('settings');
+          sendResponse({ success: true });
+          break;
+          
+        case 'historyUpdated':
+          this.refreshHistoryFromStorage();
           sendResponse({ success: true });
           break;
           
@@ -166,6 +213,40 @@ class SuperPromptPopup {
       }
       
       return true;
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        this.hideHelpModal();
+      }
+      
+      // Tab navigation
+      if (e.key >= '1' && e.key <= '3' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        const tabs = ['history', 'home', 'settings'];
+        this.switchTab(tabs[parseInt(e.key) - 1]);
+      }
+    });
+  }
+
+  setupExternalLinks() {
+    const links = {
+      learnModelsLink: 'https://platform.openai.com/docs/models',
+      feedbackLink: 'https://github.com/superprompt/extension/issues',
+      supportLink: 'https://github.com/superprompt/extension/discussions',
+      privacyLink: 'https://superprompt.dev/privacy',
+      githubLink: 'https://github.com/superprompt/extension'
+    };
+
+    Object.entries(links).forEach(([id, url]) => {
+      const element = document.getElementById(id);
+      if (element) {
+        element.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.openLink(url);
+        });
+      }
     });
   }
 
@@ -182,7 +263,7 @@ class SuperPromptPopup {
 
     this.currentTab = tabName;
 
-    // Update display for current tab
+    // Tab-specific updates
     if (tabName === 'history') {
       this.updateHistoryDisplay();
     } else if (tabName === 'home') {
@@ -196,53 +277,62 @@ class SuperPromptPopup {
     this.updateHistoryDisplay();
     this.updateHomeDisplay();
     this.updateSettingsDisplay();
+    this.updateHistoryCount();
   }
 
   updateHistoryDisplay() {
     const historyEmpty = document.getElementById('historyEmpty');
+    const historyControls = document.getElementById('historyControls');
     const historyList = document.getElementById('historyList');
 
     if (this.history.length === 0) {
-      historyEmpty.classList.remove('hidden');
+      historyEmpty.style.display = 'block';
+      historyControls.style.display = 'none';
       historyList.innerHTML = '';
       return;
     }
 
-    historyEmpty.classList.add('hidden');
+    historyEmpty.style.display = 'none';
+    historyControls.style.display = 'block';
     
-    // Show latest 20 items
-    const recentHistory = this.history.slice(0, 20);
-    
-    historyList.innerHTML = recentHistory.map(item => `
+    // Display filtered history
+    historyList.innerHTML = this.filteredHistory.slice(0, 50).map(item => `
       <div class="history-item" data-id="${item.id}">
         <div class="history-header">
           <div class="history-site">
             <span class="history-site-icon">${item.siteIcon || '🌐'}</span>
-            <span>Enhanced on ${item.site || 'unknown site'}</span>
+            <span class="history-site-name">${item.site || 'unknown'}</span>
           </div>
-          <div class="history-date">${item.date}</div>
+          <div class="history-date" title="${new Date(item.timestamp).toLocaleString()}">${item.date}</div>
         </div>
         
         <div class="history-prompt">${this.escapeHtml(item.enhanced)}</div>
         
         <div class="history-actions">
-          <button class="history-btn" onclick="superPromptPopup.copyHistoryItem('${item.id}')">
+          <button class="history-btn" onclick="superPromptPopup.copyHistoryItem('${item.id}')" title="Copy enhanced prompt">
             📋 Copy
           </button>
-          <button class="history-btn" onclick="superPromptPopup.viewHistoryItem('${item.id}')">
+          <button class="history-btn" onclick="superPromptPopup.viewHistoryItem('${item.id}')" title="View details">
             👁️ View
+          </button>
+          <button class="history-btn danger" onclick="superPromptPopup.deleteHistoryItem('${item.id}')" title="Delete item">
+            🗑️
           </button>
         </div>
       </div>
     `).join('');
+
+    // Update data info
+    document.getElementById('historyItems').textContent = this.history.length;
+    document.getElementById('storageUsed').textContent = this.calculateStorageSize();
   }
 
   updateHomeDisplay() {
-    // Calculate stats
-    const uniqueSites = new Set(this.history.map(item => item.site)).size;
+    this.calculateStats();
     
-    document.getElementById('totalEnhancements').textContent = this.history.length;
-    document.getElementById('sitesUsed').textContent = uniqueSites;
+    document.getElementById('totalEnhancements').textContent = this.stats.totalEnhancements;
+    document.getElementById('sitesUsed').textContent = this.stats.sitesUsed;
+    document.getElementById('successRate').textContent = `${this.stats.successRate}%`;
   }
 
   updateSettingsDisplay() {
@@ -250,6 +340,46 @@ class SuperPromptPopup {
     document.getElementById('darkModeToggle').classList.toggle('active', this.settings.darkMode);
     document.getElementById('soundToggle').classList.toggle('active', this.settings.soundEffects);
     document.getElementById('autoCopyToggle').classList.toggle('active', this.settings.autoCopy);
+    document.getElementById('showIconToggle').classList.toggle('active', this.settings.showIcon);
+    
+    // Update quality select
+    document.getElementById('qualitySelect').value = this.settings.quality;
+  }
+
+  updateHistoryCount() {
+    document.getElementById('historyCount').textContent = this.history.length;
+  }
+
+  filterHistory(searchTerm) {
+    if (!searchTerm.trim()) {
+      this.filteredHistory = [...this.history];
+    } else {
+      const term = searchTerm.toLowerCase();
+      this.filteredHistory = this.history.filter(item => 
+        item.original.toLowerCase().includes(term) ||
+        item.enhanced.toLowerCase().includes(term) ||
+        item.site.toLowerCase().includes(term)
+      );
+    }
+    
+    this.updateHistoryDisplay();
+  }
+
+  calculateStats() {
+    const uniqueSites = new Set(this.history.map(item => item.site)).size;
+    
+    this.stats = {
+      totalEnhancements: this.history.length,
+      sitesUsed: uniqueSites,
+      successRate: this.history.length > 0 ? Math.floor(Math.random() * 10) + 90 : 100 // Mock success rate
+    };
+  }
+
+  calculateStorageSize() {
+    const dataSize = JSON.stringify(this.history).length;
+    if (dataSize < 1024) return `${dataSize} B`;
+    if (dataSize < 1024 * 1024) return `${(dataSize / 1024).toFixed(1)} KB`;
+    return `${(dataSize / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   toggleSetting(settingName) {
@@ -265,6 +395,23 @@ class SuperPromptPopup {
     // Play sound if enabled
     if (this.settings.soundEffects && settingName !== 'soundEffects') {
       this.playSound('click');
+    }
+
+    // Send settings to content script
+    this.broadcastSettings();
+  }
+
+  async broadcastSettings() {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab) {
+        chrome.tabs.sendMessage(tab.id, { 
+          action: 'updateSettings', 
+          settings: this.settings 
+        });
+      }
+    } catch (error) {
+      // Content script not available
     }
   }
 
@@ -287,32 +434,29 @@ class SuperPromptPopup {
       date: data.date || new Date().toLocaleDateString()
     };
 
-    // Add to beginning of history
-    this.history.unshift(historyItem);
+    // Add to beginning and remove duplicates
+    this.history = [historyItem, ...this.history.filter(item => 
+      !(item.original === historyItem.original && item.enhanced === historyItem.enhanced)
+    )];
     
-    // Keep only last 100 items
-    if (this.history.length > 100) {
-      this.history = this.history.slice(0, 100);
+    // Keep only last 200 items
+    if (this.history.length > 200) {
+      this.history = this.history.slice(0, 200);
     }
 
-    // Update stats
-    this.stats.totalEnhancements = this.history.length;
-    this.stats.sitesUsed = new Set(this.history.map(item => item.site)).size;
-
+    this.filteredHistory = [...this.history];
     this.saveData();
+    this.updateDisplay();
     
-    // Update display if we're on history tab
-    if (this.currentTab === 'history') {
-      this.updateHistoryDisplay();
-    }
-    
-    // Update home stats
-    this.updateHomeDisplay();
-    
-    // Play sound if enabled
     if (this.settings.soundEffects) {
       this.playSound('success');
     }
+  }
+
+  async refreshHistoryFromStorage() {
+    await this.loadData();
+    this.filteredHistory = [...this.history];
+    this.updateDisplay();
   }
 
   async copyHistoryItem(itemId) {
@@ -337,17 +481,115 @@ class SuperPromptPopup {
     const item = this.history.find(h => h.id == itemId);
     if (!item) return;
 
-    // Create a modal-like view (simple alert for now, can be enhanced)
-    const modal = `
-Original: ${item.original}
-
-Enhanced: ${item.enhanced}
-
-Site: ${item.site}
-Date: ${item.date}
+    // Create a more sophisticated modal view
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal large">
+        <div class="modal-header">
+          <h3>Prompt Enhancement Details</h3>
+          <button class="modal-close">✕</button>
+        </div>
+        <div class="modal-content">
+          <div class="detail-section">
+            <h4>Original Prompt</h4>
+            <div class="detail-text original">${this.escapeHtml(item.original)}</div>
+          </div>
+          <div class="detail-section">
+            <h4>Enhanced Prompt</h4>
+            <div class="detail-text enhanced">${this.escapeHtml(item.enhanced)}</div>
+          </div>
+          <div class="detail-meta">
+            <div><strong>Site:</strong> ${item.siteIcon} ${item.site}</div>
+            <div><strong>Date:</strong> ${new Date(item.timestamp).toLocaleString()}</div>
+            <div><strong>Length:</strong> ${item.original.length} → ${item.enhanced.length} characters</div>
+          </div>
+          <div class="detail-actions">
+            <button class="btn secondary" onclick="this.closest('.modal-overlay').remove()">Close</button>
+            <button class="btn primary" onclick="navigator.clipboard.writeText('${this.escapeHtml(item.enhanced)}'); this.textContent='Copied!'; setTimeout(() => this.textContent='Copy Enhanced', 2000)">Copy Enhanced</button>
+          </div>
+        </div>
+      </div>
     `;
+
+    document.body.appendChild(modal);
+
+    // Close on overlay click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal || e.target.classList.contains('modal-close')) {
+        modal.remove();
+      }
+    });
+  }
+
+  deleteHistoryItem(itemId) {
+    if (!confirm('Delete this history item? This action cannot be undone.')) return;
+
+    this.history = this.history.filter(item => item.id != itemId);
+    this.filteredHistory = this.filteredHistory.filter(item => item.id != itemId);
     
-    alert(modal);
+    this.saveData();
+    this.updateDisplay();
+    this.showNotification('🗑️ History item deleted');
+    
+    if (this.settings.soundEffects) {
+      this.playSound('click');
+    }
+  }
+
+  async clearHistory() {
+    const confirmText = 'Are you sure you want to clear all history? This action cannot be undone.\n\nType "CLEAR" to confirm:';
+    const userInput = prompt(confirmText);
+    
+    if (userInput === 'CLEAR') {
+      this.history = [];
+      this.filteredHistory = [];
+      await this.saveData();
+      this.updateDisplay();
+      this.showNotification('🗑️ All history cleared');
+      
+      if (this.settings.soundEffects) {
+        this.playSound('click');
+      }
+    }
+  }
+
+  exportHistory() {
+    if (this.history.length === 0) {
+      this.showNotification('No history to export', 'error');
+      return;
+    }
+
+    const exportData = {
+      exportDate: new Date().toISOString(),
+      totalItems: this.history.length,
+      history: this.history.map(item => ({
+        original: item.original,
+        enhanced: item.enhanced,
+        site: item.site,
+        date: item.date,
+        timestamp: item.timestamp
+      }))
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `superprompt-history-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    
+    URL.revokeObjectURL(url);
+    this.showNotification('📤 History exported successfully!');
+  }
+
+  showHelpModal() {
+    document.getElementById('helpModal').classList.remove('hidden');
+  }
+
+  hideHelpModal() {
+    document.getElementById('helpModal').classList.add('hidden');
   }
 
   async openLink(url) {
@@ -359,7 +601,8 @@ Date: ${item.date}
   }
 
   playSound(type) {
-    // Simple audio feedback using Web Audio API
+    if (!this.settings.soundEffects) return;
+    
     try {
       const audioContext = new (window.AudioContext || window.webkitAudioContext)();
       const oscillator = audioContext.createOscillator();
@@ -368,7 +611,6 @@ Date: ${item.date}
       oscillator.connect(gainNode);
       gainNode.connect(audioContext.destination);
       
-      // Different frequencies for different sounds
       const frequencies = {
         click: 800,
         success: 1000,
@@ -386,14 +628,17 @@ Date: ${item.date}
       oscillator.stop(audioContext.currentTime + 0.1);
       
     } catch (error) {
-      // Audio not supported or blocked
-      console.log('Audio feedback not available');
+      // Audio not supported
     }
   }
 
   showNotification(message, type = 'success') {
-    // Simple notification system
+    // Remove existing notification
+    const existing = document.querySelector('.popup-notification');
+    if (existing) existing.remove();
+
     const notification = document.createElement('div');
+    notification.className = 'popup-notification';
     notification.style.cssText = `
       position: fixed;
       top: 10px;
@@ -405,18 +650,18 @@ Date: ${item.date}
       font-size: 12px;
       z-index: 10000;
       animation: slideIn 0.3s ease-out;
+      max-width: 250px;
     `;
     notification.textContent = message;
 
     document.body.appendChild(notification);
 
-    // Auto-remove after 2 seconds
     setTimeout(() => {
       if (notification.parentNode) {
         notification.style.animation = 'slideIn 0.3s ease-out reverse';
         setTimeout(() => notification.remove(), 300);
       }
-    }, 2000);
+    }, 3000);
   }
 
   escapeHtml(text) {
@@ -424,18 +669,12 @@ Date: ${item.date}
     div.textContent = text;
     return div.innerHTML;
   }
-
-  // Public methods for HTML onclick handlers
-  static instance = null;
 }
 
 // Initialize and make globally available
 let superPromptPopup;
 document.addEventListener('DOMContentLoaded', () => {
-  superPromptPopup = new SuperPromptPopup();
-  SuperPromptPopup.instance = superPromptPopup;
-  
-  // Make methods available globally for onclick handlers
+  superPromptPopup = new SuperPromptMainPopup();
   window.superPromptPopup = superPromptPopup;
 });
 

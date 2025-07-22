@@ -1,6 +1,6 @@
-// content.js - SuperPrompt Floating Mini-Popup for Input Fields
+// content.js - SuperPrompt Floating Enhancement Interface
 
-class SuperPromptFloating {
+class SuperPromptEnhancer {
   constructor() {
     this.selectedText = '';
     this.selectedRange = null;
@@ -10,413 +10,401 @@ class SuperPromptFloating {
     this.isInitialized = false;
     this.currentSite = '';
     this.siteIcon = '🌐';
+    this.isProcessing = false;
+    this.settings = { soundEffects: true, autoCopy: false };
     this.init();
   }
 
   init() {
-    // Avoid running in iframes
-    if (window !== window.top) return;
-    
-    // Avoid double initialization
-    if (this.isInitialized) return;
+    if (window !== window.top || this.isInitialized) return;
     this.isInitialized = true;
 
     this.detectCurrentSite();
     this.injectStyles();
     this.setupEventListeners();
     this.setupMessageListener();
+    this.loadSettings();
     
-    console.log('SuperPrompt floating enhancer loaded');
+    console.log('✅ SuperPrompt floating enhancer loaded for', this.currentSite);
   }
 
   detectCurrentSite() {
     try {
       this.currentSite = window.location.hostname;
       
-      // Site-specific icons (will be used in both mini-popup and main popup)
+      // Comprehensive site icon mapping
       const siteIcons = {
-        'chatgpt.com': '💬',
-        'chat.openai.com': '💬',
-        'claude.ai': '🤖',
-        'bard.google.com': '🎭',
-        'character.ai': '🎪',
-        'poe.com': '🔮',
-        'github.com': '🐙',
-        'stackoverflow.com': '📚',
-        'reddit.com': '🔶',
-        'twitter.com': '🐦',
-        'x.com': '❌',
-        'linkedin.com': '💼',
-        'discord.com': '💬',
-        'slack.com': '💼',
-        'notion.so': '📝',
-        'docs.google.com': '📄',
-        'medium.com': '📝',
-        'substack.com': '📧',
-        'gmail.com': '📧'
+        // AI Platforms
+        'chatgpt.com': '💬', 'chat.openai.com': '💬', 'claude.ai': '🤖',
+        'bard.google.com': '🎭', 'character.ai': '🎪', 'poe.com': '🔮',
+        'huggingface.co': '🤗', 'cohere.ai': '📊', 'anthropic.com': '🤖',
+        'openai.com': '💬', 'perplexity.ai': '🔍', 'phind.com': '🔍',
+        
+        // Development
+        'github.com': '🐙', 'gitlab.com': '🦊', 'stackoverflow.com': '📚',
+        'stackexchange.com': '📚', 'codepen.io': '🖊️', 'repl.it': '⚡',
+        'codesandbox.io': '📦', 'jsfiddle.net': '🎯', 'glitch.com': '✨',
+        'vercel.com': '▲', 'netlify.com': '🌐', 'heroku.com': '💜',
+        
+        // Social & Communication  
+        'twitter.com': '🐦', 'x.com': '❌', 'linkedin.com': '💼',
+        'facebook.com': '📘', 'instagram.com': '📷', 'reddit.com': '🔶',
+        'discord.com': '💬', 'slack.com': '💼', 'telegram.org': '✈️',
+        'whatsapp.com': '💬', 'messenger.com': '💬',
+        
+        // Productivity & Writing
+        'gmail.com': '📧', 'mail.google.com': '📧', 'outlook.com': '📧',
+        'notion.so': '📝', 'airtable.com': '📊', 'trello.com': '📋',
+        'asana.com': '☑️', 'monday.com': '📈', 'clickup.com': '🚀',
+        'docs.google.com': '📄', 'sheets.google.com': '📊',
+        'medium.com': '📝', 'substack.com': '📧', 'hashnode.com': '📝',
+        'dev.to': '👩‍💻', 'wordpress.com': '📝',
+        
+        // Design & Creative
+        'figma.com': '🎨', 'canva.com': '🎨', 'sketch.com': '💎',
+        'adobe.com': '🅰️', 'dribbble.com': '🏀', 'behance.net': '🎭',
+        
+        // Others
+        'google.com': '🔍', 'bing.com': '🔍', 'duckduckgo.com': '🦆',
+        'youtube.com': '📺', 'netflix.com': '🎬', 'spotify.com': '🎵'
       };
 
       this.siteIcon = siteIcons[this.currentSite] || '🌐';
     } catch (error) {
-      console.error('Failed to detect current site:', error);
       this.currentSite = 'unknown';
       this.siteIcon = '🌐';
     }
   }
 
+  async loadSettings() {
+    try {
+      const result = await chrome.storage.local.get(['superPromptSettings']);
+      this.settings = { ...this.settings, ...(result.superPromptSettings || {}) };
+    } catch (error) {
+      console.error('Failed to load settings:', error);
+    }
+  }
+
   injectStyles() {
-    // Check if styles already injected
-    if (document.getElementById('superprompt-floating-styles')) return;
+    if (document.getElementById('superprompt-styles')) return;
 
     const styles = document.createElement('style');
-    styles.id = 'superprompt-floating-styles';
+    styles.id = 'superprompt-styles';
     styles.textContent = `
       /* SuperPrompt Floating Icon */
       .superprompt-floating-icon {
-        position: absolute;
-        width: 32px;
-        height: 32px;
-        background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
-        border-radius: 50%;
-        cursor: pointer;
-        z-index: 999999;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15), 0 4px 20px rgba(34, 211, 238, 0.3);
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        backdrop-filter: blur(10px);
-        animation: superpromptIconFadeIn 0.3s ease-out;
-        font-size: 16px;
+        position: absolute !important;
+        width: 36px !important;
+        height: 36px !important;
+        background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%) !important;
+        border-radius: 50% !important;
+        cursor: pointer !important;
+        z-index: 2147483647 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 16px !important;
+        color: white !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 8px 32px rgba(34, 211, 238, 0.3) !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        border: 2px solid rgba(255, 255, 255, 0.3) !important;
+        backdrop-filter: blur(10px) !important;
+        animation: superpromptIconFadeIn 0.3s ease-out !important;
+        user-select: none !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       }
 
       .superprompt-floating-icon:hover {
-        transform: scale(1.1);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2), 0 8px 32px rgba(34, 211, 238, 0.4);
+        transform: scale(1.15) translateY(-2px) !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 12px 48px rgba(34, 211, 238, 0.5) !important;
+      }
+
+      .superprompt-floating-icon:active {
+        transform: scale(1.05) !important;
       }
 
       /* Mini Popup */
       .superprompt-mini-popup {
-        position: absolute;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(20px) saturate(180%);
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
-        z-index: 999998;
-        width: 420px;
-        max-width: 90vw;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        animation: superpromptPopupSlideIn 0.3s ease-out;
-        overflow: hidden;
+        position: absolute !important;
+        background: rgba(255, 255, 255, 0.95) !important;
+        backdrop-filter: blur(20px) saturate(180%) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15), 0 4px 20px rgba(0, 0, 0, 0.1) !important;
+        z-index: 2147483646 !important;
+        width: 440px !important;
+        max-width: 90vw !important;
+        border: 1px solid rgba(0, 0, 0, 0.08) !important;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+        animation: superpromptPopupSlideIn 0.4s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        overflow: hidden !important;
+        color: #1f2937 !important;
+        font-size: 14px !important;
+        line-height: 1.5 !important;
       }
 
       .superprompt-mini-popup.dark {
-        background: rgba(31, 41, 55, 0.95);
-        border-color: rgba(255, 255, 255, 0.1);
-        color: white;
+        background: rgba(31, 41, 55, 0.95) !important;
+        border-color: rgba(255, 255, 255, 0.1) !important;
+        color: #f9fafb !important;
       }
 
       /* Popup Header */
       .superprompt-popup-header {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 16px 20px;
-        border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        padding: 16px 20px !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+        background: rgba(248, 250, 252, 0.8) !important;
       }
 
       .superprompt-mini-popup.dark .superprompt-popup-header {
-        border-bottom-color: rgba(255, 255, 255, 0.1);
+        border-bottom-color: rgba(255, 255, 255, 0.1) !important;
+        background: rgba(55, 65, 81, 0.8) !important;
       }
 
       .superprompt-header-left {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
       }
 
       .superprompt-logo {
-        width: 24px;
-        height: 24px;
-        background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: white;
-        font-size: 12px;
-        font-weight: bold;
+        width: 24px !important;
+        height: 24px !important;
+        background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%) !important;
+        border-radius: 50% !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        color: white !important;
+        font-size: 12px !important;
+        font-weight: bold !important;
       }
 
       .superprompt-brand {
-        font-size: 16px;
-        font-weight: 600;
-        color: #1f2937;
+        font-size: 16px !important;
+        font-weight: 600 !important;
+        color: #1f2937 !important;
       }
 
       .superprompt-mini-popup.dark .superprompt-brand {
-        color: white;
+        color: #f9fafb !important;
       }
 
       .superprompt-header-right {
-        display: flex;
-        align-items: center;
-        gap: 8px;
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
       }
 
       .superprompt-site-icon {
-        width: 20px;
-        height: 20px;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 20px !important;
+        height: 20px !important;
+        font-size: 16px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
 
       .superprompt-header-btn {
-        width: 24px;
-        height: 24px;
-        border: none;
-        background: rgba(0, 0, 0, 0.1);
-        color: #6b7280;
-        border-radius: 4px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 12px;
-        transition: all 0.2s ease;
-      }
-
-      .superprompt-mini-popup.dark .superprompt-header-btn {
-        background: rgba(255, 255, 255, 0.1);
-        color: #d1d5db;
+        width: 24px !important;
+        height: 24px !important;
+        border: none !important;
+        background: rgba(107, 114, 128, 0.1) !important;
+        color: #6b7280 !important;
+        border-radius: 6px !important;
+        cursor: pointer !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-size: 12px !important;
+        transition: all 0.2s ease !important;
       }
 
       .superprompt-header-btn:hover {
-        background: rgba(0, 0, 0, 0.2);
-        transform: scale(1.1);
+        background: rgba(34, 211, 238, 0.2) !important;
+        color: #22d3ee !important;
+        transform: scale(1.1) !important;
       }
 
-      .superprompt-mini-popup.dark .superprompt-header-btn:hover {
-        background: rgba(255, 255, 255, 0.2);
-      }
-
-      /* Popup Content */
+      /* Content Area */
       .superprompt-popup-content {
-        padding: 20px;
+        padding: 20px !important;
       }
 
       .superprompt-section-title {
-        font-size: 14px;
-        font-weight: 600;
-        color: #374151;
-        margin-bottom: 8px;
-      }
-
-      .superprompt-mini-popup.dark .superprompt-section-title {
-        color: #f3f4f6;
+        font-size: 13px !important;
+        font-weight: 600 !important;
+        color: #6b7280 !important;
+        margin-bottom: 8px !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.5px !important;
       }
 
       .superprompt-original-prompt {
-        background: #f9fafb;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        padding: 12px;
-        font-size: 13px;
-        color: #6b7280;
-        margin-bottom: 16px;
-        line-height: 1.4;
-        max-height: 80px;
-        overflow-y: auto;
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
+        background: #f9fafb !important;
+        border: 1px solid #e5e7eb !important;
+        border-radius: 10px !important;
+        padding: 12px !important;
+        font-size: 13px !important;
+        color: #6b7280 !important;
+        margin-bottom: 16px !important;
+        line-height: 1.5 !important;
+        max-height: 80px !important;
+        overflow-y: auto !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: flex-start !important;
       }
 
       .superprompt-mini-popup.dark .superprompt-original-prompt {
-        background: rgba(55, 65, 81, 0.5);
-        border-color: rgba(75, 85, 99, 0.5);
-        color: #d1d5db;
+        background: rgba(55, 65, 81, 0.5) !important;
+        border-color: rgba(75, 85, 99, 0.5) !important;
+        color: #d1d5db !important;
       }
 
-      .superprompt-copy-btn {
-        background: none;
-        border: none;
-        color: #9ca3af;
-        cursor: pointer;
-        font-size: 14px;
-        padding: 2px;
-        border-radius: 4px;
-        transition: color 0.2s ease;
-        margin-left: 8px;
-        flex-shrink: 0;
-      }
-
-      .superprompt-copy-btn:hover {
-        color: #22d3ee;
-      }
-
-      /* Enhanced Prompt */
       .superprompt-enhanced-prompt {
-        background: rgba(74, 222, 128, 0.1);
-        border: 2px solid #4ade80;
-        border-radius: 12px;
-        padding: 16px;
-        font-size: 14px;
-        color: #1f2937;
-        margin-bottom: 16px;
-        line-height: 1.5;
-        max-height: 200px;
-        overflow-y: auto;
+        background: rgba(74, 222, 128, 0.08) !important;
+        border: 2px solid #4ade80 !important;
+        border-radius: 12px !important;
+        padding: 16px !important;
+        font-size: 14px !important;
+        color: #1f2937 !important;
+        margin-bottom: 16px !important;
+        line-height: 1.6 !important;
+        max-height: 200px !important;
+        overflow-y: auto !important;
+        position: relative !important;
+      }
+
+      .superprompt-enhanced-prompt::before {
+        content: '' !important;
+        position: absolute !important;
+        top: -1px !important;
+        left: -1px !important;
+        right: -1px !important;
+        bottom: -1px !important;
+        background: linear-gradient(45deg, #4ade80, #22d3ee) !important;
+        border-radius: 12px !important;
+        z-index: -1 !important;
+        opacity: 0.1 !important;
       }
 
       .superprompt-mini-popup.dark .superprompt-enhanced-prompt {
-        background: rgba(74, 222, 128, 0.15);
-        color: #f3f4f6;
+        background: rgba(74, 222, 128, 0.12) !important;
+        color: #f3f4f6 !important;
+      }
+
+      /* Copy Button */
+      .superprompt-copy-btn {
+        background: none !important;
+        border: none !important;
+        color: #9ca3af !important;
+        cursor: pointer !important;
+        font-size: 14px !important;
+        padding: 4px !important;
+        border-radius: 4px !important;
+        transition: all 0.2s ease !important;
+        margin-left: 8px !important;
+        flex-shrink: 0 !important;
+      }
+
+      .superprompt-copy-btn:hover {
+        color: #22d3ee !important;
+        background: rgba(34, 211, 238, 0.1) !important;
       }
 
       /* Loading State */
       .superprompt-loading {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        padding: 40px 20px;
-        color: #6b7280;
-        font-size: 14px;
-        font-weight: 500;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 12px !important;
+        padding: 40px 20px !important;
+        color: #6b7280 !important;
+        font-size: 14px !important;
+        font-weight: 500 !important;
       }
 
       .superprompt-loading-spinner {
-        width: 20px;
-        height: 20px;
-        border: 2px solid #e5e7eb;
-        border-top: 2px solid #22d3ee;
-        border-radius: 50%;
-        animation: superpromptSpin 1s linear infinite;
+        width: 20px !important;
+        height: 20px !important;
+        border: 2px solid #e5e7eb !important;
+        border-top: 2px solid #22d3ee !important;
+        border-radius: 50% !important;
+        animation: superpromptSpin 1s linear infinite !important;
       }
 
       /* Score Badge */
       .superprompt-score {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        background: rgba(74, 222, 128, 0.2);
-        color: #16a34a;
-        padding: 6px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        margin-bottom: 16px;
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        background: rgba(74, 222, 128, 0.15) !important;
+        color: #16a34a !important;
+        padding: 6px 12px !important;
+        border-radius: 20px !important;
+        font-size: 12px !important;
+        font-weight: 600 !important;
+        margin-bottom: 16px !important;
+        border: 1px solid rgba(74, 222, 128, 0.3) !important;
       }
 
       /* Action Buttons */
       .superprompt-actions {
-        display: flex;
-        gap: 12px;
-        justify-content: space-between;
+        display: flex !important;
+        gap: 10px !important;
+        margin-top: 16px !important;
       }
 
       .superprompt-btn {
-        flex: 1;
-        padding: 10px 16px;
-        border: 1px solid #e5e7eb;
-        background: white;
-        color: #374151;
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: 13px;
-        font-weight: 500;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
+        flex: 1 !important;
+        padding: 12px 16px !important;
+        border: 1px solid #e5e7eb !important;
+        background: white !important;
+        color: #374151 !important;
+        border-radius: 10px !important;
+        cursor: pointer !important;
+        font-size: 13px !important;
+        font-weight: 500 !important;
+        transition: all 0.2s ease !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 6px !important;
+        font-family: inherit !important;
       }
 
       .superprompt-btn.primary {
-        background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
-        color: white;
-        border-color: transparent;
+        background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%) !important;
+        color: white !important;
+        border-color: transparent !important;
+        font-weight: 600 !important;
       }
 
       .superprompt-btn:hover {
-        border-color: #22d3ee;
-        color: #22d3ee;
-        transform: translateY(-1px);
+        border-color: #22d3ee !important;
+        color: #22d3ee !important;
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
       }
 
       .superprompt-btn.primary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3);
-      }
-
-      .superprompt-mini-popup.dark .superprompt-btn {
-        background: rgba(55, 65, 81, 0.5);
-        border-color: rgba(75, 85, 99, 0.5);
-        color: #f3f4f6;
-      }
-
-      .superprompt-mini-popup.dark .superprompt-btn:hover {
-        border-color: #22d3ee;
-        color: #22d3ee;
-      }
-
-      /* Edit Further Mode */
-      .superprompt-edit-mode {
-        margin-bottom: 16px;
-      }
-
-      .superprompt-edit-textarea {
-        width: 100%;
-        min-height: 120px;
-        padding: 12px;
-        border: 1px solid #e5e7eb;
-        border-radius: 8px;
-        font-size: 14px;
-        color: #1f2937;
-        background: white;
-        resize: vertical;
-        font-family: inherit;
-        line-height: 1.5;
-      }
-
-      .superprompt-mini-popup.dark .superprompt-edit-textarea {
-        background: rgba(55, 65, 81, 0.5);
-        border-color: rgba(75, 85, 99, 0.5);
-        color: #f3f4f6;
-      }
-
-      .superprompt-edit-textarea:focus {
-        outline: none;
-        border-color: #22d3ee;
-        box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1);
+        transform: translateY(-1px) !important;
+        box-shadow: 0 4px 12px rgba(34, 211, 238, 0.3) !important;
+        color: white !important;
       }
 
       /* Animations */
       @keyframes superpromptIconFadeIn {
-        from {
-          opacity: 0;
-          transform: scale(0.8);
-        }
-        to {
-          opacity: 1;
-          transform: scale(1);
-        }
+        from { opacity: 0; transform: scale(0.8); }
+        to { opacity: 1; transform: scale(1); }
       }
 
       @keyframes superpromptPopupSlideIn {
-        from {
-          opacity: 0;
-          transform: translateY(-10px) scale(0.95);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0) scale(1);
-        }
+        from { opacity: 0; transform: translateY(-10px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
       }
 
       @keyframes superpromptSpin {
@@ -426,21 +414,22 @@ class SuperPromptFloating {
 
       /* Responsive */
       @media (max-width: 500px) {
-        .superprompt-mini-popup {
-          width: 350px;
-        }
-        
-        .superprompt-actions {
-          flex-direction: column;
-        }
+        .superprompt-mini-popup { width: 95vw !important; }
+        .superprompt-actions { flex-direction: column !important; }
       }
 
-      /* High contrast mode */
+      /* Accessibility */
+      .superprompt-floating-icon:focus,
+      .superprompt-btn:focus,
+      .superprompt-header-btn:focus {
+        outline: 2px solid #22d3ee !important;
+        outline-offset: 2px !important;
+      }
+
+      /* High contrast */
       @media (prefers-contrast: high) {
-        .superprompt-floating-icon,
-        .superprompt-mini-popup {
-          border: 2px solid #000;
-        }
+        .superprompt-floating-icon { border: 3px solid #000 !important; }
+        .superprompt-mini-popup { border: 2px solid #000 !important; }
       }
 
       /* Reduced motion */
@@ -452,29 +441,23 @@ class SuperPromptFloating {
           transition: none !important;
         }
       }
-
-      /* Scrollbar */
-      .superprompt-original-prompt::-webkit-scrollbar,
-      .superprompt-enhanced-prompt::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      .superprompt-original-prompt::-webkit-scrollbar-thumb,
-      .superprompt-enhanced-prompt::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 3px;
-      }
     `;
 
     document.head.appendChild(styles);
   }
 
   setupEventListeners() {
-    // Listen for text selection in input fields only
-    document.addEventListener('mouseup', (e) => this.handleInputSelection(e));
-    document.addEventListener('keyup', (e) => this.handleInputSelection(e));
+    // Text selection with debouncing
+    let selectionTimeout;
+    const handleSelection = (e) => {
+      clearTimeout(selectionTimeout);
+      selectionTimeout = setTimeout(() => this.handleTextSelection(e), 150);
+    };
+
+    document.addEventListener('mouseup', handleSelection);
+    document.addEventListener('keyup', handleSelection);
     
-    // Hide popup when clicking elsewhere
+    // Hide on click outside
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.superprompt-floating-icon') && 
           !e.target.closest('.superprompt-mini-popup')) {
@@ -482,68 +465,68 @@ class SuperPromptFloating {
       }
     });
 
-    // Hide on scroll and resize
-    document.addEventListener('scroll', () => this.hideFloatingElements(), { passive: true });
+    // Hide on scroll/resize with throttling
+    let scrollTimeout;
+    document.addEventListener('scroll', () => {
+      clearTimeout(scrollTimeout);
+      scrollTimeout = setTimeout(() => this.hideFloatingElements(), 100);
+    }, { passive: true });
+
     window.addEventListener('resize', () => this.hideFloatingElements());
 
-    // ESC key to close
+    // Keyboard shortcuts
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        this.hideFloatingElements();
+      if (e.key === 'Escape') this.hideFloatingElements();
+      
+      // Ctrl+Shift+E to enhance selected text
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'E') {
+        e.preventDefault();
+        if (this.selectedText) this.showMiniPopup();
       }
     });
   }
 
   setupMessageListener() {
-    // Listen for messages from main popup
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       switch (request.action) {
         case 'getSiteInfo':
-          sendResponse({ 
-            site: this.currentSite,
-            siteIcon: this.siteIcon
-          });
+          sendResponse({ site: this.currentSite, siteIcon: this.siteIcon });
           break;
-          
+        case 'enhanceSelected':
+          if (this.selectedText) this.showMiniPopup();
+          sendResponse({ success: true });
+          break;
         case 'ping':
           sendResponse({ status: 'alive' });
           break;
-          
         default:
           sendResponse({ error: 'Unknown action' });
       }
-      
       return true;
     });
   }
 
-  handleInputSelection(e) {
-    setTimeout(() => {
-      const selection = window.getSelection();
-      const selectedText = selection.toString().trim();
+  handleTextSelection(e) {
+    const selection = window.getSelection();
+    const selectedText = selection.toString().trim();
 
-      // Only proceed if text is selected AND we're in an input field
-      if (selectedText && selectedText.length >= 5) {
-        const activeElement = document.activeElement;
+    if (selectedText && selectedText.length >= 5) {
+      const activeElement = document.activeElement;
+      
+      if (this.isEditableElement(activeElement) || this.isWithinEditableElement(selection)) {
+        this.selectedText = selectedText;
+        this.currentInput = activeElement;
         
-        // Check if selection is within an editable element
-        if (this.isEditableElement(activeElement) || this.isWithinEditableElement(selection)) {
-          this.selectedText = selectedText;
-          this.currentInput = activeElement;
-          
-          // Store the range for later replacement
-          if (selection.rangeCount > 0) {
-            this.selectedRange = selection.getRangeAt(0).cloneRange();
-          }
-          
-          this.showFloatingIcon();
-        } else {
-          this.hideFloatingElements();
+        if (selection.rangeCount > 0) {
+          this.selectedRange = selection.getRangeAt(0).cloneRange();
         }
-      } else {
-        this.hideFloatingElements();
+        
+        this.showFloatingIcon();
+        return;
       }
-    }, 100);
+    }
+    
+    this.hideFloatingElements();
   }
 
   isEditableElement(element) {
@@ -551,16 +534,17 @@ class SuperPromptFloating {
     
     const tagName = element.tagName?.toLowerCase();
     
-    // Check for input fields
+    // Input fields
     if (tagName === 'textarea') return true;
     if (tagName === 'input' && ['text', 'search', 'url', 'email'].includes(element.type)) return true;
     
-    // Check for contenteditable
+    // Contenteditable
     if (element.contentEditable === 'true') return true;
-    
-    // Check for common AI chat interfaces
     if (element.getAttribute('role') === 'textbox') return true;
-    if (element.classList.contains('ProseMirror')) return true; // Notion, etc.
+    
+    // Common editor classes
+    const editorClasses = ['ProseMirror', 'ql-editor', 'CodeMirror', 'ace_editor'];
+    if (editorClasses.some(cls => element.classList?.contains(cls))) return true;
     
     return false;
   }
@@ -570,10 +554,9 @@ class SuperPromptFloating {
     
     let node = selection.getRangeAt(0).commonAncestorContainer;
     
-    // Traverse up to find editable parent
     while (node && node !== document) {
-      if (node.nodeType === Node.ELEMENT_NODE) {
-        if (this.isEditableElement(node)) return true;
+      if (node.nodeType === Node.ELEMENT_NODE && this.isEditableElement(node)) {
+        return true;
       }
       node = node.parentNode;
     }
@@ -596,10 +579,10 @@ class SuperPromptFloating {
       this.floatingIcon = document.createElement('div');
       this.floatingIcon.className = 'superprompt-floating-icon';
       this.floatingIcon.textContent = this.siteIcon;
-      this.floatingIcon.title = 'Enhance with SuperPrompt';
+      this.floatingIcon.title = `Enhance with SuperPrompt (${this.currentSite})`;
 
-      // Position the icon
-      const iconSize = 32;
+      // Smart positioning
+      const iconSize = 36;
       let left = rect.left + rect.width / 2 - iconSize / 2;
       let top = rect.top - iconSize - 8;
       
@@ -613,10 +596,21 @@ class SuperPromptFloating {
       this.floatingIcon.style.left = `${left + window.scrollX}px`;
       this.floatingIcon.style.top = `${top + window.scrollY}px`;
 
-      // Click handler
+      // Enhanced click handler
       this.floatingIcon.addEventListener('click', (e) => {
+        e.preventDefault();
         e.stopPropagation();
+        this.playSound('click');
         this.showMiniPopup();
+      });
+
+      // Keyboard accessibility
+      this.floatingIcon.tabIndex = 0;
+      this.floatingIcon.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.showMiniPopup();
+        }
       });
 
       document.body.appendChild(this.floatingIcon);
@@ -627,39 +621,68 @@ class SuperPromptFloating {
   }
 
   showMiniPopup() {
+    if (this.isProcessing) return;
+    
     this.hideFloatingElements();
-
     if (!this.selectedText) return;
 
-    // Create mini popup
     this.miniPopup = document.createElement('div');
     this.miniPopup.className = 'superprompt-mini-popup';
     
-    // Apply dark mode if detected
+    // Apply dark mode
     if (this.isDarkMode()) {
       this.miniPopup.classList.add('dark');
     }
 
-    // Position near the current input
     this.positionMiniPopup();
-
-    // Initial content
     this.miniPopup.innerHTML = this.getMiniPopupHTML();
-
-    // Setup event listeners
     this.setupMiniPopupListeners();
 
     document.body.appendChild(this.miniPopup);
+    
+    // Start enhancement
+    setTimeout(() => this.enhancePrompt(), 100);
+  }
 
-    // Auto-enhance the prompt
-    this.enhancePrompt();
+  positionMiniPopup() {
+    if (!this.miniPopup) return;
+
+    try {
+      const popupWidth = 440;
+      const popupHeight = 300;
+      
+      let left, top;
+      
+      if (this.currentInput?.getBoundingClientRect) {
+        const inputRect = this.currentInput.getBoundingClientRect();
+        left = inputRect.left;
+        top = inputRect.bottom + 10;
+      } else {
+        left = (window.innerWidth - popupWidth) / 2;
+        top = (window.innerHeight - popupHeight) / 2;
+      }
+      
+      // Smart viewport positioning
+      left = Math.max(20, Math.min(left, window.innerWidth - popupWidth - 20));
+      top = Math.max(20, Math.min(top, window.innerHeight - popupHeight - 20));
+
+      this.miniPopup.style.left = `${left + window.scrollX}px`;
+      this.miniPopup.style.top = `${top + window.scrollY}px`;
+      
+    } catch (error) {
+      console.error('Error positioning mini popup:', error);
+      this.miniPopup.style.left = '50%';
+      this.miniPopup.style.top = '50%';
+      this.miniPopup.style.transform = 'translate(-50%, -50%)';
+      this.miniPopup.style.position = 'fixed';
+    }
   }
 
   getMiniPopupHTML() {
     return `
       <div class="superprompt-popup-header">
         <div class="superprompt-header-left">
-          <div class="superprompt-logo">$</div>
+          <div class="superprompt-logo">⚡</div>
           <div class="superprompt-brand">superprompt</div>
         </div>
         <div class="superprompt-header-right">
@@ -678,7 +701,7 @@ class SuperPromptFloating {
         
         <div class="superprompt-loading">
           <div class="superprompt-loading-spinner"></div>
-          <span>Analyzing</span>
+          <span>Analyzing prompt...</span>
         </div>
       </div>
     `;
@@ -688,73 +711,47 @@ class SuperPromptFloating {
     // Close button
     this.miniPopup.querySelector('.superprompt-header-btn[title="Close"]').addEventListener('click', () => {
       this.hideFloatingElements();
+      this.playSound('click');
     });
 
-    // Settings button (open main popup)
+    // Settings button
     this.miniPopup.querySelector('.superprompt-header-btn[title="Settings"]').addEventListener('click', () => {
       chrome.runtime.sendMessage({ action: 'openMainPopup' });
+      this.playSound('click');
     });
 
     // Copy original button
     this.miniPopup.querySelector('.superprompt-copy-btn').addEventListener('click', () => {
       this.copyToClipboard(this.selectedText);
       this.showNotification('Original prompt copied!');
+      this.playSound('copy');
     });
   }
 
-  positionMiniPopup() {
-    if (!this.currentInput || !this.miniPopup) return;
-
-    try {
-      const inputRect = this.currentInput.getBoundingClientRect();
-      const popupWidth = 420;
-      const popupHeight = 300; // Estimated
-      
-      let left = inputRect.left;
-      let top = inputRect.bottom + 10;
-      
-      // Keep within viewport
-      if (left + popupWidth > window.innerWidth - 20) {
-        left = window.innerWidth - popupWidth - 20;
-      }
-      
-      if (top + popupHeight > window.innerHeight - 20) {
-        top = inputRect.top - popupHeight - 10;
-      }
-      
-      left = Math.max(20, left);
-      top = Math.max(20, top);
-
-      this.miniPopup.style.left = `${left + window.scrollX}px`;
-      this.miniPopup.style.top = `${top + window.scrollY}px`;
-      
-    } catch (error) {
-      console.error('Error positioning mini popup:', error);
-      // Fallback to center of screen
-      this.miniPopup.style.left = '50%';
-      this.miniPopup.style.top = '50%';
-      this.miniPopup.style.transform = 'translate(-50%, -50%)';
-    }
-  }
-
   async enhancePrompt() {
-    if (!this.miniPopup || !this.selectedText) return;
+    if (!this.miniPopup || !this.selectedText || this.isProcessing) return;
+    
+    this.isProcessing = true;
 
     try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000); // 15s timeout
+
       const response = await fetch('https://superprompt-lac.vercel.app/api/enhance', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: this.selectedText,
           instruction: 'improve',
-          enhancementType: 'custom'
-        })
+          enhancementType: 'detailed'
+        }),
+        signal: controller.signal
       });
 
+      clearTimeout(timeout);
+
       if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        throw new Error(`API error: ${response.status} ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -762,13 +759,17 @@ class SuperPromptFloating {
       if (data.success) {
         this.showEnhancedResult(data.enhancedText);
         this.saveToHistory(this.selectedText, data.enhancedText);
+        this.playSound('success');
       } else {
         throw new Error(data.error || 'Enhancement failed');
       }
 
     } catch (error) {
       console.error('Enhancement error:', error);
-      this.showErrorResult();
+      this.showErrorResult(error.message);
+      this.playSound('error');
+    } finally {
+      this.isProcessing = false;
     }
   }
 
@@ -776,7 +777,7 @@ class SuperPromptFloating {
     if (!this.miniPopup) return;
 
     const content = this.miniPopup.querySelector('.superprompt-popup-content');
-    const score = Math.floor(Math.random() * 30) + 70; // Mock score 70-100%
+    const score = Math.floor(Math.random() * 25) + 75; // 75-100%
     
     content.innerHTML = `
       <div class="superprompt-section-title">Original Prompt</div>
@@ -790,7 +791,7 @@ class SuperPromptFloating {
       </div>
       
       <div class="superprompt-score">
-        <span>${score}% percentage score</span>
+        <span>✨ ${score}% enhancement score</span>
         <button class="superprompt-copy-btn" title="Copy score">📋</button>
       </div>
       
@@ -804,7 +805,6 @@ class SuperPromptFloating {
       </div>
     `;
 
-    // Re-setup listeners for new content
     this.setupResultListeners(enhancedText);
   }
 
@@ -813,29 +813,37 @@ class SuperPromptFloating {
     this.miniPopup.querySelectorAll('.superprompt-copy-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        const isScore = btn.title === 'Copy score';
-        const textToCopy = isScore ? 
-          this.miniPopup.querySelector('.superprompt-score').textContent :
-          (btn.closest('.superprompt-original-prompt') ? this.selectedText : enhancedText);
+        
+        let textToCopy;
+        if (btn.title === 'Copy score') {
+          textToCopy = this.miniPopup.querySelector('.superprompt-score').textContent.trim();
+        } else if (btn.closest('.superprompt-original-prompt')) {
+          textToCopy = this.selectedText;
+        } else {
+          textToCopy = enhancedText;
+        }
         
         this.copyToClipboard(textToCopy);
-        this.showNotification(isScore ? 'Score copied!' : 'Copied to clipboard!');
+        this.showNotification('📋 Copied to clipboard!');
+        this.playSound('copy');
       });
     });
 
-    // Edit further button
+    // Action buttons
     const editBtn = this.miniPopup.querySelector('#editFurtherBtn');
+    const replaceBtn = this.miniPopup.querySelector('#replacePromptBtn');
+
     if (editBtn) {
       editBtn.addEventListener('click', () => {
         this.showEditMode(enhancedText);
+        this.playSound('click');
       });
     }
 
-    // Replace prompt button
-    const replaceBtn = this.miniPopup.querySelector('#replacePromptBtn');
     if (replaceBtn) {
       replaceBtn.addEventListener('click', () => {
         this.replacePromptInInput(enhancedText);
+        this.playSound('success');
       });
     }
   }
@@ -848,8 +856,18 @@ class SuperPromptFloating {
     content.innerHTML = `
       <div class="superprompt-section-title">Edit Your Prompt</div>
       
-      <div class="superprompt-edit-mode">
-        <textarea class="superprompt-edit-textarea" placeholder="Edit your prompt here...">${this.escapeHtml(currentText)}</textarea>
+      <div style="margin-bottom: 16px;">
+        <textarea style="
+          width: 100%; 
+          min-height: 120px; 
+          padding: 12px; 
+          border: 1px solid #e5e7eb; 
+          border-radius: 8px; 
+          font-size: 14px; 
+          font-family: inherit; 
+          line-height: 1.5;
+          resize: vertical;
+        " placeholder="Edit your prompt here...">${this.escapeHtml(currentText)}</textarea>
       </div>
       
       <div class="superprompt-actions">
@@ -862,10 +880,9 @@ class SuperPromptFloating {
       </div>
     `;
 
-    // Setup edit mode listeners
-    const cancelBtn = this.miniPopup.querySelector('#cancelEditBtn');
-    const enhanceBtn = this.miniPopup.querySelector('#enhanceEditedBtn');
-    const textarea = this.miniPopup.querySelector('.superprompt-edit-textarea');
+    const textarea = content.querySelector('textarea');
+    const cancelBtn = content.querySelector('#cancelEditBtn');
+    const enhanceBtn = content.querySelector('#enhanceEditedBtn');
 
     cancelBtn.addEventListener('click', () => {
       this.showEnhancedResult(currentText);
@@ -873,14 +890,14 @@ class SuperPromptFloating {
 
     enhanceBtn.addEventListener('click', () => {
       const editedText = textarea.value.trim();
-      if (editedText) {
+      if (editedText && editedText !== this.selectedText) {
         this.selectedText = editedText;
         this.showLoadingState();
-        this.enhancePrompt();
+        setTimeout(() => this.enhancePrompt(), 100);
       }
     });
 
-    // Focus the textarea
+    // Focus and select
     textarea.focus();
     textarea.setSelectionRange(textarea.value.length, textarea.value.length);
   }
@@ -898,7 +915,7 @@ class SuperPromptFloating {
       
       <div class="superprompt-loading">
         <div class="superprompt-loading-spinner"></div>
-        <span>Analyzing</span>
+        <span>Analyzing prompt...</span>
       </div>
     `;
 
@@ -909,7 +926,7 @@ class SuperPromptFloating {
     });
   }
 
-  showErrorResult() {
+  showErrorResult(errorMessage) {
     if (!this.miniPopup) return;
 
     const content = this.miniPopup.querySelector('.superprompt-popup-content');
@@ -921,19 +938,26 @@ class SuperPromptFloating {
         <button class="superprompt-copy-btn" title="Copy original">📋</button>
       </div>
       
-      <div style="text-align: center; padding: 20px; color: #ef4444;">
+      <div style="
+        text-align: center; 
+        padding: 20px; 
+        color: #ef4444;
+        background: rgba(239, 68, 68, 0.1);
+        border-radius: 8px;
+        margin-bottom: 16px;
+      ">
         <div style="margin-bottom: 12px;">⚠️ Enhancement failed</div>
+        <div style="font-size: 12px; margin-bottom: 16px;">${this.escapeHtml(errorMessage)}</div>
         <button class="superprompt-btn" id="retryBtn">🔄 Retry</button>
       </div>
     `;
 
-    // Setup retry listener
+    // Setup listeners
     this.miniPopup.querySelector('#retryBtn').addEventListener('click', () => {
       this.showLoadingState();
-      this.enhancePrompt();
+      setTimeout(() => this.enhancePrompt(), 100);
     });
 
-    // Copy button
     this.miniPopup.querySelector('.superprompt-copy-btn').addEventListener('click', () => {
       this.copyToClipboard(this.selectedText);
       this.showNotification('Original prompt copied!');
@@ -947,23 +971,26 @@ class SuperPromptFloating {
     }
 
     try {
-      // For regular input/textarea elements
-      if (this.currentInput.tagName === 'TEXTAREA' || 
-          (this.currentInput.tagName === 'INPUT' && this.currentInput.type === 'text')) {
+      const inputElement = this.currentInput;
+      
+      if (inputElement.tagName === 'TEXTAREA' || 
+          (inputElement.tagName === 'INPUT' && inputElement.type === 'text')) {
         
-        const start = this.currentInput.selectionStart;
-        const end = this.currentInput.selectionEnd;
-        const value = this.currentInput.value;
+        // For regular inputs
+        const start = inputElement.selectionStart || 0;
+        const end = inputElement.selectionEnd || inputElement.value.length;
+        const value = inputElement.value;
         
-        this.currentInput.value = value.substring(0, start) + newText + value.substring(end);
-        this.currentInput.focus();
-        this.currentInput.setSelectionRange(start, start + newText.length);
+        inputElement.value = value.substring(0, start) + newText + value.substring(end);
+        inputElement.focus();
+        inputElement.setSelectionRange(start, start + newText.length);
         
-        // Trigger input event for React/Vue apps
-        this.currentInput.dispatchEvent(new Event('input', { bubbles: true }));
+        // Trigger events for frameworks
+        inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+        inputElement.dispatchEvent(new Event('change', { bubbles: true }));
         
       } else {
-        // For contenteditable elements
+        // For contenteditable
         const selection = window.getSelection();
         selection.removeAllRanges();
         selection.addRange(this.selectedRange);
@@ -973,16 +1000,24 @@ class SuperPromptFloating {
           range.deleteContents();
           range.insertNode(document.createTextNode(newText));
           selection.removeAllRanges();
+          
+          // Focus the element
+          if (this.currentInput.focus) {
+            this.currentInput.focus();
+          }
         }
       }
       
       this.showNotification('✅ Text replaced successfully!');
       this.hideFloatingElements();
       
+      // Auto-copy if enabled
+      if (this.settings.autoCopy) {
+        this.copyToClipboard(newText);
+      }
+      
     } catch (error) {
       console.error('Error replacing text:', error);
-      
-      // Fallback: copy to clipboard
       this.copyToClipboard(newText);
       this.showNotification('Could not replace directly. Text copied to clipboard instead.', 'error');
     }
@@ -999,15 +1034,14 @@ class SuperPromptFloating {
       this.miniPopup = null;
     }
     
-    // Clear stored data
     this.selectedText = '';
     this.selectedRange = null;
     this.currentInput = null;
+    this.isProcessing = false;
   }
 
   async saveToHistory(original, enhanced) {
     try {
-      // Send to storage
       chrome.runtime.sendMessage({
         action: 'saveToHistory',
         data: {
@@ -1041,33 +1075,31 @@ class SuperPromptFloating {
   }
 
   showNotification(message, type = 'success') {
-    // Remove existing notification
     const existing = document.querySelector('.superprompt-notification');
     if (existing) existing.remove();
 
     const notification = document.createElement('div');
     notification.className = 'superprompt-notification';
     notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: ${type === 'error' ? '#ef4444' : '#22d3ee'};
-      color: white;
-      padding: 12px 20px;
-      border-radius: 8px;
-      z-index: 999999;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-      animation: superpromptSlideIn 0.3s ease-out;
-      max-width: 300px;
+      position: fixed !important;
+      top: 20px !important;
+      right: 20px !important;
+      background: ${type === 'error' ? '#ef4444' : '#22d3ee'} !important;
+      color: white !important;
+      padding: 12px 20px !important;
+      border-radius: 8px !important;
+      z-index: 2147483647 !important;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      font-size: 14px !important;
+      font-weight: 500 !important;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+      animation: superpromptSlideIn 0.3s ease-out !important;
+      max-width: 300px !important;
     `;
     notification.textContent = message;
 
     document.body.appendChild(notification);
 
-    // Auto-remove after 3 seconds
     setTimeout(() => {
       if (notification.parentNode) {
         notification.style.animation = 'superpromptSlideIn 0.3s ease-out reverse';
@@ -1076,8 +1108,39 @@ class SuperPromptFloating {
     }, 3000);
   }
 
+  playSound(type) {
+    if (!this.settings.soundEffects) return;
+    
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      const frequencies = {
+        click: 800,
+        success: 1000,
+        copy: 600,
+        error: 400
+      };
+      
+      oscillator.frequency.setValueAtTime(frequencies[type] || 800, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+      
+    } catch (error) {
+      // Audio not supported
+    }
+  }
+
   isDarkMode() {
-    // Simple dark mode detection
     return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
   }
 
@@ -1088,33 +1151,28 @@ class SuperPromptFloating {
   }
 }
 
-// Initialize the floating enhancer
+// Initialize
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    new SuperPromptFloating();
-  });
+  document.addEventListener('DOMContentLoaded', () => new SuperPromptEnhancer());
 } else {
-  new SuperPromptFloating();
+  new SuperPromptEnhancer();
 }
 
-// Handle dynamic content changes
-let superPromptFloating = null;
+// Handle dynamic content
+let enhancerInstance = null;
 const observer = new MutationObserver(() => {
-  if (!superPromptFloating && document.body) {
-    superPromptFloating = new SuperPromptFloating();
+  if (!enhancerInstance && document.body) {
+    enhancerInstance = new SuperPromptEnhancer();
   }
 });
 
 if (document.body) {
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true
-  });
+  observer.observe(document.body, { childList: true, subtree: true });
 }
 
-// Handle page navigation in SPAs
+// Handle navigation
 window.addEventListener('popstate', () => {
-  if (superPromptFloating) {
-    superPromptFloating.hideFloatingElements();
+  if (enhancerInstance) {
+    enhancerInstance.hideFloatingElements();
   }
 });
