@@ -1,0 +1,282 @@
+/* content.css - SuperPrompt Floating Interface Styles */
+
+/* Reset and ensure our styles take precedence */
+.superprompt-floating-icon,
+.superprompt-mini-popup,
+.superprompt-notification {
+  all: initial;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+  box-sizing: border-box !important;
+  line-height: 1.5 !important;
+}
+
+/* Ensure maximum z-index for visibility */
+.superprompt-floating-icon {
+  z-index: 2147483647 !important;
+}
+
+.superprompt-mini-popup {
+  z-index: 2147483646 !important;
+}
+
+.superprompt-notification {
+  z-index: 2147483647 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+  .superprompt-mini-popup {
+    width: 95vw !important;
+    max-width: 350px !important;
+    margin: 0 10px !important;
+  }
+  
+  .superprompt-floating-icon {
+    width: 36px !important;
+    height: 36px !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .superprompt-floating-icon {
+    border: 3px solid #000 !important;
+    box-shadow: 0 0 0 1px #fff, 0 4px 20px rgba(0, 0, 0, 0.5) !important;
+  }
+  
+  .superprompt-mini-popup {
+    border: 2px solid #000 !important;
+    box-shadow: 0 0 0 1px #fff, 0 10px 40px rgba(0, 0, 0, 0.5) !important;
+  }
+}
+
+/* Reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  .superprompt-floating-icon,
+  .superprompt-mini-popup,
+  .superprompt-notification,
+  .superprompt-btn,
+  .superprompt-header-btn {
+    animation: none !important;
+    transition: none !important;
+  }
+  
+  .superprompt-loading-spinner {
+    animation: none !important;
+    border-top-color: transparent !important;
+  }
+}
+
+/* Dark mode adaptations */
+@media (prefers-color-scheme: dark) {
+  .superprompt-mini-popup:not(.dark) {
+    background: rgba(31, 41, 55, 0.95) !important;
+    color: #f9fafb !important;
+  }
+  
+  .superprompt-mini-popup:not(.dark) .superprompt-brand {
+    color: #f9fafb !important;
+  }
+  
+  .superprompt-mini-popup:not(.dark) .superprompt-section-title {
+    color: #f3f4f6 !important;
+  }
+}
+
+/* Prevent conflicts with popular CSS frameworks */
+.superprompt-floating-icon *,
+.superprompt-mini-popup *,
+.superprompt-notification * {
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Override any potential conflicts */
+.superprompt-mini-popup {
+  position: absolute !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}
+
+.superprompt-floating-icon {
+  position: absolute !important;
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure buttons are clickable */
+.superprompt-btn,
+.superprompt-header-btn,
+.superprompt-copy-btn,
+.superprompt-floating-icon {
+  cursor: pointer !important;
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Prevent text selection in UI elements */
+.superprompt-mini-popup .superprompt-popup-header,
+.superprompt-mini-popup .superprompt-actions,
+.superprompt-floating-icon {
+  user-select: none !important;
+  -webkit-user-select: none !important;
+  -moz-user-select: none !important;
+  -ms-user-select: none !important;
+}
+
+/* Allow text selection in content areas */
+.superprompt-original-prompt,
+.superprompt-enhanced-prompt,
+.superprompt-edit-textarea {
+  user-select: text !important;
+  -webkit-user-select: text !important;
+  -moz-user-select: text !important;
+  -ms-user-select: text !important;
+}
+
+/* Focus styles for accessibility */
+.superprompt-floating-icon:focus,
+.superprompt-btn:focus,
+.superprompt-header-btn:focus,
+.superprompt-copy-btn:focus {
+  outline: 2px solid #22d3ee !important;
+  outline-offset: 2px !important;
+}
+
+.superprompt-edit-textarea:focus {
+  outline: none !important;
+  border-color: #22d3ee !important;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.1) !important;
+}
+
+/* Print styles (hide floating elements) */
+@media print {
+  .superprompt-floating-icon,
+  .superprompt-mini-popup,
+  .superprompt-notification {
+    display: none !important;
+  }
+}
+
+/* Specific site overrides for common conflicts */
+/* Gmail */
+.gmail_default .superprompt-mini-popup {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+}
+
+/* Notion */
+.notion-app .superprompt-mini-popup {
+  font-size: 14px !important;
+}
+
+/* Discord */
+.app-mount .superprompt-mini-popup {
+  font-weight: normal !important;
+}
+
+/* Slack */
+.p-client .superprompt-mini-popup {
+  color: #1f2937 !important;
+}
+
+/* ChatGPT */
+.react-scroll-to-bottom--css-* .superprompt-mini-popup {
+  position: absolute !important;
+  z-index: 999999 !important;
+}
+
+/* Claude.ai */
+.claude-app .superprompt-mini-popup {
+  backdrop-filter: blur(20px) !important;
+}
+
+/* Ensure visibility on all backgrounds */
+.superprompt-floating-icon {
+  background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%) !important;
+  color: white !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+.superprompt-mini-popup {
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+}
+
+/* Fallback for browsers without backdrop-filter support */
+@supports not (backdrop-filter: blur(20px)) {
+  .superprompt-mini-popup {
+    background: rgba(255, 255, 255, 0.98) !important;
+  }
+  
+  .superprompt-mini-popup.dark {
+    background: rgba(31, 41, 55, 0.98) !important;
+  }
+}
+
+/* Animation keyframes with !important for specificity */
+@keyframes superpromptSlideIn {
+  from {
+    opacity: 0 !important;
+    transform: translateX(100%) !important;
+  }
+  to {
+    opacity: 1 !important;
+    transform: translateX(0) !important;
+  }
+}
+
+/* Ensure smooth scrolling in popup content */
+.superprompt-original-prompt,
+.superprompt-enhanced-prompt {
+  scroll-behavior: smooth !important;
+}
+
+/* Custom scrollbar for webkit browsers */
+.superprompt-original-prompt::-webkit-scrollbar,
+.superprompt-enhanced-prompt::-webkit-scrollbar {
+  width: 6px !important;
+  height: 6px !important;
+}
+
+.superprompt-original-prompt::-webkit-scrollbar-track,
+.superprompt-enhanced-prompt::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1) !important;
+  border-radius: 3px !important;
+}
+
+.superprompt-original-prompt::-webkit-scrollbar-thumb,
+.superprompt-enhanced-prompt::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3) !important;
+  border-radius: 3px !important;
+}
+
+.superprompt-original-prompt::-webkit-scrollbar-thumb:hover,
+.superprompt-enhanced-prompt::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+
+/* Dark mode scrollbar */
+.superprompt-mini-popup.dark .superprompt-original-prompt::-webkit-scrollbar-track,
+.superprompt-mini-popup.dark .superprompt-enhanced-prompt::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+.superprompt-mini-popup.dark .superprompt-original-prompt::-webkit-scrollbar-thumb,
+.superprompt-mini-popup.dark .superprompt-enhanced-prompt::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+
+.superprompt-mini-popup.dark .superprompt-original-prompt::-webkit-scrollbar-thumb:hover,
+.superprompt-mini-popup.dark .superprompt-enhanced-prompt::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
