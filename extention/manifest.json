@@ -11,6 +11,12 @@
   "host_permissions": [
     "https://superprompt-lac.vercel.app/*"
   ],
+  "icons": {
+    "16": "icon.png",
+    "32": "icon.png",
+    "48": "icon.png",
+    "128": "icon.png"
+  },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
@@ -29,16 +35,10 @@
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icon.png",
-      "24": "icon.png",
       "32": "icon.png",
-      "48": "icon.png"
+      "48": "icon.png",
+      "128": "icon.png"
     }
-  },
-  "icons": {
-    "16": "icon.png",
-    "32": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
   },
   "commands": {
     "_execute_action": {
@@ -48,12 +48,6 @@
       },
       "description": "Open SuperPrompt popup"
     },
-    "web_accessible_resources": [
-    {
-      "resources": ["icon.png"],
-      "matches": ["<all_urls>"]
-    }
-  ],
     "enhance_selected": {
       "suggested_key": {
         "default": "Ctrl+Shift+E",
@@ -66,4 +60,3 @@
     "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
-
