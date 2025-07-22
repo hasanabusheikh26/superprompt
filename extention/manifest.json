@@ -1,11 +1,12 @@
 {
   "manifest_version": 3,
   "name": "SuperPrompt",
-  "version": "1.0.1",
-  "description": "Enhance any AI prompt on any website for better results",
+  "version": "1.1.0",
+  "description": "AI prompt enhancement for better results - highlight text in any input field and enhance instantly",
   "permissions": [
     "activeTab",
-    "storage"
+    "storage",
+    "tabs"
   ],
   "host_permissions": [
     "https://superprompt-lac.vercel.app/*"
@@ -14,18 +15,32 @@
     {
       "matches": ["<all_urls>"],
       "js": ["content.js"],
-      "run_at": "document_end"
+      "css": ["content.css"],
+      "all_frames": false,
+      "run_at": "document_idle",
+      "exclude_matches": [
+        "*://chrome://*/*",
+        "*://chrome-extension://*/*",
+        "*://moz-extension://*/*"
+      ]
     }
   ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "SuperPrompt",
-    "default_popup": "popup.html"
+    "default_title": "SuperPrompt - AI Prompt Enhancer",
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icon.png",
+      "24": "icon.png",
+      "32": "icon.png",
+      "48": "icon.png"
+    }
   },
   "icons": {
     "16": "icon.png",
+    "32": "icon.png",
     "48": "icon.png",
     "128": "icon.png"
   },
@@ -34,5 +49,17 @@
       "resources": ["icon.png"],
       "matches": ["<all_urls>"]
     }
-  ]
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "commands": {
+    "_execute_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+P",
+        "mac": "Command+Shift+P"
+      },
+      "description": "Open SuperPrompt popup"
+    }
+  }
 }
