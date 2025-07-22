@@ -1,329 +1,447 @@
-// Final popup.js - Production ready with simple Clerk integration
+// popup.js - SuperPrompt Main Toolbar Popup
 
-class PromptEnhancer {
+class SuperPromptPopup {
   constructor() {
+    this.currentTab = 'history';
+    this.history = [];
+    this.settings = {
+      darkMode: false,
+      soundEffects: true,
+      autoCopy: false
+    };
+    this.stats = {
+      totalEnhancements: 0,
+      sitesUsed: 0
+    };
     this.init();
   }
 
   async init() {
-    this.initElements();
-    await this.checkAuthStatus();
+    await this.loadData();
+    await this.detectCurrentSite();
     this.setupEventListeners();
+    this.updateDisplay();
+    this.applyTheme();
   }
 
-  initElements() {
-    // Screens
-    this.authScreen = document.getElementById('authScreen');
-    this.appScreen = document.getElementById('appScreen');
-    
-    // Auth elements
-    this.signUpBtn = document.getElementById('signUpBtn');
-    this.signInBtn = document.getElementById('signInBtn');
-    this.logoutBtn = document.getElementById('logoutBtn');
-    this.userInfo = document.getElementById('userInfo');
-    this.userEmail = document.getElementById('userEmail');
-    
-    // App elements
-    this.promptInput = document.getElementById('promptInput');
-    this.enhanceBtn = document.getElementById('enhanceBtn');
-    this.copyBtn = document.getElementById('copyBtn');
-    this.resultContainer = document.getElementById('resultContainer');
-    this.resultText = document.getElementById('resultText');
-    this.loadingState = document.getElementById('loadingState');
-    this.errorState = document.getElementById('errorState');
-    this.successState = document.getElementById('successState');
-    
-    // Enhancement buttons
-    this.enhancementBtns = document.querySelectorAll('.enhancement-btn');
-    this.selectedEnhancement = 'improve';
-  }
-
-  async checkAuthStatus() {
+  async loadData() {
     try {
-      // Check local storage first
-      const result = await chrome.storage.local.get(['user', 'authToken', 'tokenExpiry']);
+      const result = await chrome.storage.local.get(['promptHistory', 'superPromptSettings', 'superPromptStats']);
       
-      if (result.authToken && result.tokenExpiry && Date.now() < result.tokenExpiry) {
-        this.showAuthenticatedState(result.user);
-        return;
-      }
-
-      // Check with backend
-      const response = await fetch('https://superprompt-lac.vercel.app/api/auth/session', {
-        method: 'GET',
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.authenticated) {
-          await this.saveAuthData(data);
-          this.showAuthenticatedState(data.user);
-          return;
-        }
-      }
-
-      this.showUnauthenticatedState();
+      this.history = result.promptHistory || [];
+      this.settings = { ...this.settings, ...(result.superPromptSettings || {}) };
+      this.stats = { ...this.stats, ...(result.superPromptStats || {}) };
       
     } catch (error) {
-      console.error('Auth check error:', error);
-      this.showUnauthenticatedState();
+      console.error('Failed to load data:', error);
     }
   }
 
-  async saveAuthData(authData) {
-    const expiryTime = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
-    
-    await chrome.storage.local.set({
-      user: authData.user,
-      authToken: authData.token,
-      tokenExpiry: expiryTime
-    });
+  async saveData() {
+    try {
+      await chrome.storage.local.set({
+        promptHistory: this.history,
+        superPromptSettings: this.settings,
+        superPromptStats: this.stats
+      });
+    } catch (error) {
+      console.error('Failed to save data:', error);
+    }
   }
 
-  showAuthenticatedState(user) {
-    this.authScreen.classList.add('hidden');
-    this.appScreen.classList.remove('hidden');
-    this.userInfo.classList.remove('hidden');
-    this.userEmail.textContent = user.email || user.id || 'User';
-  }
-
-  showUnauthenticatedState() {
-    this.authScreen.classList.remove('hidden');
-    this.appScreen.classList.add('hidden');
-    this.userInfo.classList.add('hidden');
+  async detectCurrentSite() {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (tab?.url) {
+        const url = new URL(tab.url);
+        const hostname = url.hostname;
+        
+        // Try to get site info from content script
+        try {
+          const response = await chrome.tabs.sendMessage(tab.id, { action: 'getSiteInfo' });
+          if (response?.siteIcon) {
+            document.getElementById('siteIcon').textContent = response.siteIcon;
+            return;
+          }
+        } catch (e) {
+          // Content script not loaded, use fallback
+        }
+        
+        // Fallback site icon detection
+        const siteIcons = {
+          'chatgpt.com': '💬',
+          'chat.openai.com': '💬',
+          'claude.ai': '🤖',
+          'bard.google.com': '🎭',
+          'character.ai': '🎪',
+          'poe.com': '🔮',
+          'github.com': '🐙',
+          'stackoverflow.com': '📚',
+          'reddit.com': '🔶',
+          'twitter.com': '🐦',
+          'x.com': '❌',
+          'linkedin.com': '💼',
+          'discord.com': '💬',
+          'slack.com': '💼',
+          'notion.so': '📝',
+          'docs.google.com': '📄',
+          'medium.com': '📝',
+          'substack.com': '📧',
+          'gmail.com': '📧'
+        };
+        
+        const icon = siteIcons[hostname] || '🌐';
+        document.getElementById('siteIcon').textContent = icon;
+      }
+    } catch (error) {
+      console.error('Failed to detect current site:', error);
+      document.getElementById('siteIcon').textContent = '🌐';
+    }
   }
 
   setupEventListeners() {
-    // Auth buttons
-    this.signUpBtn.addEventListener('click', () => this.handleAuth('signup'));
-    this.signInBtn.addEventListener('click', () => this.handleAuth('signin'));
-    this.logoutBtn.addEventListener('click', () => this.handleLogout());
-    
-    // Enhancement selection
-    this.enhancementBtns.forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        this.enhancementBtns.forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
-        this.selectedEnhancement = e.target.dataset.type;
+    // Tab switching
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', (e) => {
+        const tabName = e.target.dataset.tab;
+        this.switchTab(tabName);
       });
     });
-    
-    if (this.enhancementBtns.length > 0) {
-      this.enhancementBtns[0].classList.add('active');
-    }
-    
-    // Main functionality
-    this.enhanceBtn.addEventListener('click', () => this.enhancePrompt());
-    this.copyBtn.addEventListener('click', () => this.copyResult());
-    
-    // Input validation
-    this.promptInput.addEventListener('input', () => {
-      const hasText = this.promptInput.value.trim().length > 0;
-      this.enhanceBtn.disabled = !hasText;
+
+    // Header close button
+    document.getElementById('closeBtn').addEventListener('click', () => {
+      window.close();
+    });
+
+    // Settings toggles
+    document.getElementById('darkModeToggle').addEventListener('click', () => {
+      this.toggleSetting('darkMode');
+    });
+
+    document.getElementById('soundToggle').addEventListener('click', () => {
+      this.toggleSetting('soundEffects');
+    });
+
+    document.getElementById('autoCopyToggle').addEventListener('click', () => {
+      this.toggleSetting('autoCopy');
+    });
+
+    // External links
+    document.getElementById('learnModelsLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openLink('https://platform.openai.com/docs/models');
+    });
+
+    document.getElementById('feedbackLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openLink('https://forms.gle/your-feedback-form');
+    });
+
+    document.getElementById('supportLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openLink('https://github.com/your-repo/issues');
+    });
+
+    document.getElementById('privacyLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      this.openLink('https://your-website.com/privacy');
+    });
+
+    // Listen for messages from content script
+    chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+      switch (request.action) {
+        case 'saveToHistory':
+          this.addToHistory(request.data);
+          sendResponse({ success: true });
+          break;
+          
+        case 'openMainPopup':
+          // Already open, just switch to settings
+          this.switchTab('settings');
+          sendResponse({ success: true });
+          break;
+          
+        default:
+          sendResponse({ error: 'Unknown action' });
+      }
+      
+      return true;
     });
   }
 
-  async handleAuth(type) {
-    try {
-      const baseUrl = 'https://modest-shrew-1.accounts.dev';
-      const redirectUrl = encodeURIComponent('https://superprompt-lac.vercel.app/auth/callback');
-      
-      const authUrl = type === 'signup' 
-        ? `${baseUrl}/sign-up?redirect_url=${redirectUrl}`
-        : `${baseUrl}/sign-in?redirect_url=${redirectUrl}`;
-      
-      // Open auth in new tab
-      const authTab = await chrome.tabs.create({ url: authUrl });
-      
-      // Listen for auth completion
-      this.listenForAuthCompletion(authTab.id);
-      
-    } catch (error) {
-      console.error('Auth error:', error);
-      this.showError('Authentication failed. Please try again.');
+  switchTab(tabName) {
+    // Update tab buttons
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.classList.toggle('active', tab.dataset.tab === tabName);
+    });
+
+    // Update tab content
+    document.querySelectorAll('.tab-content').forEach(content => {
+      content.classList.toggle('active', content.id === tabName + 'Tab');
+    });
+
+    this.currentTab = tabName;
+
+    // Update display for current tab
+    if (tabName === 'history') {
+      this.updateHistoryDisplay();
+    } else if (tabName === 'home') {
+      this.updateHomeDisplay();
+    } else if (tabName === 'settings') {
+      this.updateSettingsDisplay();
     }
   }
 
-  listenForAuthCompletion(tabId) {
-    let pollCount = 0;
-    const maxPolls = 30; // 1 minute max
-    
-    const pollForAuth = async () => {
-      try {
-        pollCount++;
-        
-        // Check if auth completed
-        const response = await fetch('https://superprompt-lac.vercel.app/api/auth/session', {
-          method: 'GET',
-          credentials: 'include'
-        });
+  updateDisplay() {
+    this.updateHistoryDisplay();
+    this.updateHomeDisplay();
+    this.updateSettingsDisplay();
+  }
 
-        if (response.ok) {
-          const data = await response.json();
-          if (data.authenticated) {
-            await this.saveAuthData(data);
-            this.showAuthenticatedState(data.user);
-            this.showSuccess('Successfully signed in!');
-            
-            // Close auth tab
-            try {
-              await chrome.tabs.remove(tabId);
-            } catch (e) {
-              // Tab might already be closed
-            }
-            return;
-          }
-        }
+  updateHistoryDisplay() {
+    const historyEmpty = document.getElementById('historyEmpty');
+    const historyList = document.getElementById('historyList');
+
+    if (this.history.length === 0) {
+      historyEmpty.classList.remove('hidden');
+      historyList.innerHTML = '';
+      return;
+    }
+
+    historyEmpty.classList.add('hidden');
+    
+    // Show latest 20 items
+    const recentHistory = this.history.slice(0, 20);
+    
+    historyList.innerHTML = recentHistory.map(item => `
+      <div class="history-item" data-id="${item.id}">
+        <div class="history-header">
+          <div class="history-site">
+            <span class="history-site-icon">${item.siteIcon || '🌐'}</span>
+            <span>Enhanced on ${item.site || 'unknown site'}</span>
+          </div>
+          <div class="history-date">${item.date}</div>
+        </div>
         
-        // Continue polling
-        if (pollCount < maxPolls) {
-          setTimeout(pollForAuth, 2000);
-        }
+        <div class="history-prompt">${this.escapeHtml(item.enhanced)}</div>
         
-      } catch (error) {
-        console.error('Auth polling error:', error);
-      }
+        <div class="history-actions">
+          <button class="history-btn" onclick="superPromptPopup.copyHistoryItem('${item.id}')">
+            📋 Copy
+          </button>
+          <button class="history-btn" onclick="superPromptPopup.viewHistoryItem('${item.id}')">
+            👁️ View
+          </button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  updateHomeDisplay() {
+    // Calculate stats
+    const uniqueSites = new Set(this.history.map(item => item.site)).size;
+    
+    document.getElementById('totalEnhancements').textContent = this.history.length;
+    document.getElementById('sitesUsed').textContent = uniqueSites;
+  }
+
+  updateSettingsDisplay() {
+    // Update toggle states
+    document.getElementById('darkModeToggle').classList.toggle('active', this.settings.darkMode);
+    document.getElementById('soundToggle').classList.toggle('active', this.settings.soundEffects);
+    document.getElementById('autoCopyToggle').classList.toggle('active', this.settings.autoCopy);
+  }
+
+  toggleSetting(settingName) {
+    this.settings[settingName] = !this.settings[settingName];
+    this.updateSettingsDisplay();
+    this.saveData();
+    
+    // Apply changes immediately
+    if (settingName === 'darkMode') {
+      this.applyTheme();
+    }
+    
+    // Play sound if enabled
+    if (this.settings.soundEffects && settingName !== 'soundEffects') {
+      this.playSound('click');
+    }
+  }
+
+  applyTheme() {
+    if (this.settings.darkMode) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
+    }
+  }
+
+  addToHistory(data) {
+    const historyItem = {
+      id: data.timestamp || Date.now(),
+      original: data.original,
+      enhanced: data.enhanced,
+      site: data.site,
+      siteIcon: data.siteIcon,
+      timestamp: data.timestamp || Date.now(),
+      date: data.date || new Date().toLocaleDateString()
     };
+
+    // Add to beginning of history
+    this.history.unshift(historyItem);
     
-    // Start polling
-    setTimeout(pollForAuth, 3000);
+    // Keep only last 100 items
+    if (this.history.length > 100) {
+      this.history = this.history.slice(0, 100);
+    }
+
+    // Update stats
+    this.stats.totalEnhancements = this.history.length;
+    this.stats.sitesUsed = new Set(this.history.map(item => item.site)).size;
+
+    this.saveData();
+    
+    // Update display if we're on history tab
+    if (this.currentTab === 'history') {
+      this.updateHistoryDisplay();
+    }
+    
+    // Update home stats
+    this.updateHomeDisplay();
+    
+    // Play sound if enabled
+    if (this.settings.soundEffects) {
+      this.playSound('success');
+    }
   }
 
-  async handleLogout() {
-    try {
-      // Clear local storage
-      await chrome.storage.local.remove(['user', 'authToken', 'tokenExpiry']);
-      
-      // Reset UI
-      this.showUnauthenticatedState();
-      this.clearResults();
-      this.showSuccess('Successfully signed out.');
-      
-    } catch (error) {
-      console.error('Logout error:', error);
-      this.showError('Logout failed. Please try again.');
-    }
-  }
-
-  async enhancePrompt() {
-    const prompt = this.promptInput.value.trim();
-    
-    if (!prompt) {
-      this.showError('Please enter a prompt to enhance.');
-      return;
-    }
-
-    const authData = await chrome.storage.local.get(['authToken']);
-    if (!authData.authToken) {
-      this.showError('Please sign in to use prompt enhancement.');
-      return;
-    }
-
-    this.setLoadingState(true);
-    this.clearMessages();
+  async copyHistoryItem(itemId) {
+    const item = this.history.find(h => h.id == itemId);
+    if (!item) return;
 
     try {
-      const response = await fetch('https://superprompt-lac.vercel.app/api/enhance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          prompt: prompt,
-          enhancementType: this.selectedEnhancement
-        })
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          await this.handleLogout();
-          throw new Error('Session expired. Please sign in again.');
-        }
-        throw new Error(`API error: ${response.status}`);
+      await navigator.clipboard.writeText(item.enhanced);
+      this.showNotification('📋 Copied to clipboard!');
+      
+      if (this.settings.soundEffects) {
+        this.playSound('copy');
       }
-
-      const data = await response.json();
-      this.showResult(data.enhancedPrompt);
-      this.showSuccess('Prompt enhanced successfully!');
-      
-    } catch (error) {
-      console.error('Enhancement error:', error);
-      this.showError(error.message || 'Failed to enhance prompt. Please try again.');
-    } finally {
-      this.setLoadingState(false);
-    }
-  }
-
-  showResult(enhancedPrompt) {
-    this.resultText.textContent = enhancedPrompt;
-    this.resultContainer.classList.remove('hidden');
-  }
-
-  async copyResult() {
-    try {
-      const text = this.resultText.textContent;
-      await navigator.clipboard.writeText(text);
-      
-      const originalText = this.copyBtn.textContent;
-      this.copyBtn.textContent = 'Copied!';
-      this.copyBtn.style.background = '#059669';
-      
-      setTimeout(() => {
-        this.copyBtn.textContent = originalText;
-        this.copyBtn.style.background = '#10b981';
-      }, 2000);
       
     } catch (error) {
       console.error('Copy failed:', error);
-      this.showError('Failed to copy. Please select and copy manually.');
+      this.showNotification('❌ Failed to copy', 'error');
     }
   }
 
-  setLoadingState(loading) {
-    if (loading) {
-      this.loadingState.classList.remove('hidden');
-      this.enhanceBtn.disabled = true;
-      this.resultContainer.classList.add('hidden');
-    } else {
-      this.loadingState.classList.add('hidden');
-      this.enhanceBtn.disabled = false;
+  viewHistoryItem(itemId) {
+    const item = this.history.find(h => h.id == itemId);
+    if (!item) return;
+
+    // Create a modal-like view (simple alert for now, can be enhanced)
+    const modal = `
+Original: ${item.original}
+
+Enhanced: ${item.enhanced}
+
+Site: ${item.site}
+Date: ${item.date}
+    `;
+    
+    alert(modal);
+  }
+
+  async openLink(url) {
+    try {
+      await chrome.tabs.create({ url });
+    } catch (error) {
+      console.error('Failed to open link:', error);
     }
   }
 
-  showError(message) {
-    this.errorState.textContent = message;
-    this.errorState.classList.remove('hidden');
-    this.successState.classList.add('hidden');
-    
+  playSound(type) {
+    // Simple audio feedback using Web Audio API
+    try {
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      // Different frequencies for different sounds
+      const frequencies = {
+        click: 800,
+        success: 1000,
+        copy: 600,
+        error: 400
+      };
+      
+      oscillator.frequency.setValueAtTime(frequencies[type] || 800, audioContext.currentTime);
+      oscillator.type = 'sine';
+      
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.1);
+      
+    } catch (error) {
+      // Audio not supported or blocked
+      console.log('Audio feedback not available');
+    }
+  }
+
+  showNotification(message, type = 'success') {
+    // Simple notification system
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: ${type === 'error' ? '#ef4444' : '#22d3ee'};
+      color: white;
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      z-index: 10000;
+      animation: slideIn 0.3s ease-out;
+    `;
+    notification.textContent = message;
+
+    document.body.appendChild(notification);
+
+    // Auto-remove after 2 seconds
     setTimeout(() => {
-      this.errorState.classList.add('hidden');
-    }, 5000);
+      if (notification.parentNode) {
+        notification.style.animation = 'slideIn 0.3s ease-out reverse';
+        setTimeout(() => notification.remove(), 300);
+      }
+    }, 2000);
   }
 
-  showSuccess(message) {
-    this.successState.textContent = message;
-    this.successState.classList.remove('hidden');
-    this.errorState.classList.add('hidden');
-    
-    setTimeout(() => {
-      this.successState.classList.add('hidden');
-    }, 3000);
+  escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
   }
 
-  clearMessages() {
-    this.errorState.classList.add('hidden');
-    this.successState.classList.add('hidden');
-  }
-
-  clearResults() {
-    this.resultContainer.classList.add('hidden');
-    this.promptInput.value = '';
-  }
+  // Public methods for HTML onclick handlers
+  static instance = null;
 }
 
-// Initialize
+// Initialize and make globally available
+let superPromptPopup;
 document.addEventListener('DOMContentLoaded', () => {
-  new PromptEnhancer();
+  superPromptPopup = new SuperPromptPopup();
+  SuperPromptPopup.instance = superPromptPopup;
+  
+  // Make methods available globally for onclick handlers
+  window.superPromptPopup = superPromptPopup;
+});
+
+// Handle window unload
+window.addEventListener('beforeunload', () => {
+  if (superPromptPopup) {
+    superPromptPopup.saveData();
+  }
 });
