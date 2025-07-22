@@ -1,12 +1,12 @@
 {
   "manifest_version": 3,
   "name": "SuperPrompt",
-  "version": "1.1.0",
-  "description": "AI prompt enhancement for better results - highlight text in any input field and enhance instantly",
+  "version": "1.2.0",
+  "description": "AI prompt enhancement for better results - like Grammarly for prompts. Highlight text in any input field and enhance instantly.",
   "permissions": [
     "activeTab",
     "storage",
-    "tabs"
+    "scripting"
   ],
   "host_permissions": [
     "https://superprompt-lac.vercel.app/*"
@@ -17,7 +17,8 @@
       "js": ["content.js"],
       "css": ["content.css"],
       "all_frames": false,
-      "run_at": "document_idle"
+      "run_at": "document_idle",
+      "match_about_blank": false
     }
   ],
   "background": {
@@ -39,15 +40,6 @@
     "48": "icon.png",
     "128": "icon.png"
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["icon.png"],
-      "matches": ["<all_urls>"]
-    }
-  ],
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
-  },
   "commands": {
     "_execute_action": {
       "suggested_key": {
@@ -55,6 +47,23 @@
         "mac": "Command+Shift+P"
       },
       "description": "Open SuperPrompt popup"
+    },
+    "web_accessible_resources": [
+    {
+      "resources": ["icon.png"],
+      "matches": ["<all_urls>"]
     }
+  ],
+    "enhance_selected": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+E",
+        "mac": "Command+Shift+E"
+      },
+      "description": "Enhance selected text"
+    }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
+

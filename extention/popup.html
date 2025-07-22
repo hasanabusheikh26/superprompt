@@ -1,720 +1,135 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
   <title>SuperPrompt</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      width: 380px;
-      min-height: 500px;
-      max-height: 600px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-      background: #ffffff;
-      color: #1f2937;
-      overflow: hidden;
-    }
-
-    /* Header */
-    .header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 16px 20px;
-      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
-      color: white;
-    }
-
-    .logo-section {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .logo-icon {
-      width: 24px;
-      height: 24px;
-      background: rgba(255, 255, 255, 0.2);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: bold;
-    }
-
-    .logo-text {
-      font-size: 16px;
-      font-weight: 600;
-    }
-
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .site-icon {
-      width: 20px;
-      height: 20px;
-      font-size: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .header-btn {
-      width: 24px;
-      height: 24px;
-      border: none;
-      background: rgba(255, 255, 255, 0.2);
-      color: white;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      transition: background 0.2s ease;
-    }
-
-    .header-btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-    }
-
-    /* Tabs */
-    .tabs {
-      display: flex;
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
-    }
-
-    .tab {
-      flex: 1;
-      padding: 12px;
-      background: none;
-      border: none;
-      color: #64748b;
-      font-size: 14px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-    }
-
-    .tab.active {
-      color: #22d3ee;
-      background: white;
-    }
-
-    .tab.active::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: #22d3ee;
-    }
-
-    /* Content Area */
-    .content {
-      height: 440px;
-      overflow-y: auto;
-    }
-
-    .tab-content {
-      display: none;
-      padding: 20px;
-      height: 100%;
-    }
-
-    .tab-content.active {
-      display: block;
-    }
-
-    /* History Tab */
-    .history-empty {
-      text-align: center;
-      padding: 60px 20px;
-      color: #64748b;
-    }
-
-    .history-empty-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-      opacity: 0.6;
-    }
-
-    .history-empty-title {
-      font-size: 16px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #374151;
-    }
-
-    .history-empty-desc {
-      font-size: 14px;
-      line-height: 1.5;
-    }
-
-    .history-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .history-item {
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      padding: 16px;
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-
-    .history-item:hover {
-      background: #f3f4f6;
-      border-color: #22d3ee;
-      transform: translateY(-1px);
-    }
-
-    .history-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 8px;
-    }
-
-    .history-site {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: #6b7280;
-    }
-
-    .history-site-icon {
-      font-size: 14px;
-    }
-
-    .history-date {
-      font-size: 12px;
-      color: #9ca3af;
-    }
-
-    .history-prompt {
-      font-size: 14px;
-      color: #374151;
-      line-height: 1.4;
-      margin-bottom: 12px;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-
-    .history-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .history-btn {
-      flex: 1;
-      padding: 6px 12px;
-      background: white;
-      border: 1px solid #e5e7eb;
-      color: #6b7280;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
-      font-weight: 500;
-      transition: all 0.2s ease;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-    }
-
-    .history-btn:hover {
-      border-color: #22d3ee;
-      color: #22d3ee;
-      background: #f0fdfa;
-    }
-
-    /* Home Tab */
-    .home-container {
-      text-align: center;
-      padding: 40px 20px;
-    }
-
-    .home-logo {
-      width: 64px;
-      height: 64px;
-      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-      font-size: 24px;
-      color: white;
-      font-weight: bold;
-    }
-
-    .home-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: #1f2937;
-      margin-bottom: 8px;
-    }
-
-    .home-subtitle {
-      font-size: 14px;
-      color: #6b7280;
-      margin-bottom: 32px;
-      line-height: 1.5;
-    }
-
-    .home-guide {
-      text-align: left;
-      background: #f8fafc;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 24px;
-    }
-
-    .guide-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .guide-step {
-      display: flex;
-      align-items: flex-start;
-      gap: 12px;
-      margin-bottom: 12px;
-      font-size: 14px;
-      color: #4b5563;
-      line-height: 1.5;
-    }
-
-    .step-number {
-      background: #22d3ee;
-      color: white;
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      font-weight: 600;
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    .home-stats {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-      margin-bottom: 20px;
-    }
-
-    .stat-card {
-      background: white;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      padding: 16px;
-      text-align: center;
-    }
-
-    .stat-number {
-      font-size: 24px;
-      font-weight: 700;
-      color: #22d3ee;
-      margin-bottom: 4px;
-    }
-
-    .stat-label {
-      font-size: 12px;
-      color: #6b7280;
-      font-weight: 500;
-    }
-
-    /* Settings Tab */
-    .settings-section {
-      margin-bottom: 32px;
-    }
-
-    .settings-title {
-      font-size: 16px;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .setting-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 12px;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      margin-bottom: 8px;
-    }
-
-    .setting-label {
-      font-size: 14px;
-      color: #374151;
-      font-weight: 500;
-    }
-
-    .setting-desc {
-      font-size: 12px;
-      color: #6b7280;
-      margin-top: 2px;
-    }
-
-    .toggle-switch {
-      position: relative;
-      width: 44px;
-      height: 24px;
-      background: #e5e7eb;
-      border-radius: 12px;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-
-    .toggle-switch.active {
-      background: #22d3ee;
-    }
-
-    .toggle-slider {
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 20px;
-      height: 20px;
-      background: white;
-      border-radius: 50%;
-      transition: transform 0.2s ease;
-    }
-
-    .toggle-switch.active .toggle-slider {
-      transform: translateX(20px);
-    }
-
-    .model-card {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px;
-      background: #f8fafc;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      margin-bottom: 12px;
-    }
-
-    .model-icon {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #4ade80 0%, #22d3ee 100%);
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-    }
-
-    .model-info {
-      flex: 1;
-    }
-
-    .model-name {
-      font-size: 14px;
-      font-weight: 600;
-      color: #374151;
-      margin-bottom: 4px;
-    }
-
-    .model-desc {
-      font-size: 12px;
-      color: #6b7280;
-      line-height: 1.4;
-    }
-
-    .model-status {
-      font-size: 12px;
-      color: #22d3ee;
-      font-weight: 500;
-    }
-
-    .settings-link {
-      color: #22d3ee;
-      text-decoration: none;
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .settings-link:hover {
-      text-decoration: underline;
-    }
-
-    /* Version Info */
-    .version-info {
-      text-align: center;
-      padding-top: 20px;
-      border-top: 1px solid #e5e7eb;
-      color: #9ca3af;
-      font-size: 12px;
-    }
-
-    /* Hidden class */
-    .hidden {
-      display: none !important;
-    }
-
-    /* Scrollbar */
-    .content::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .content::-webkit-scrollbar-track {
-      background: #f1f5f9;
-    }
-
-    .content::-webkit-scrollbar-thumb {
-      background: #cbd5e1;
-      border-radius: 3px;
-    }
-
-    .content::-webkit-scrollbar-thumb:hover {
-      background: #94a3b8;
-    }
-
-    /* Dark mode */
-    body.dark {
-      background: #1f2937;
-      color: #f9fafb;
-    }
-
-    body.dark .tabs {
-      background: #374151;
-      border-bottom-color: #4b5563;
-    }
-
-    body.dark .tab {
-      color: #9ca3af;
-    }
-
-    body.dark .tab.active {
-      background: #1f2937;
-      color: #22d3ee;
-    }
-
-    body.dark .history-item,
-    body.dark .setting-item,
-    body.dark .model-card {
-      background: #374151;
-      border-color: #4b5563;
-    }
-
-    body.dark .history-item:hover {
-      background: #4b5563;
-    }
-
-    body.dark .history-btn {
-      background: #4b5563;
-      border-color: #6b7280;
-      color: #d1d5db;
-    }
-
-    body.dark .history-btn:hover {
-      border-color: #22d3ee;
-      color: #22d3ee;
-      background: rgba(34, 211, 238, 0.1);
-    }
-
-    body.dark .home-guide {
-      background: #374151;
-    }
-
-    body.dark .stat-card {
-      background: #374151;
-      border-color: #4b5563;
-    }
-
-    body.dark .content::-webkit-scrollbar-track {
-      background: #374151;
-    }
-
-    body.dark .content::-webkit-scrollbar-thumb {
-      background: #6b7280;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css" />
+  <script defer src="popup.js"></script>
 </head>
 <body>
   <div class="header">
     <div class="logo-section">
-      <div class="logo-icon">$</div>
-      <div class="logo-text">superprompt</div>
+      <div class="logo-icon">⚡</div>
+      <span class="logo-text">SuperPrompt</span>
+      <span class="site-icon" id="siteIcon" title=""></span>
     </div>
     <div class="header-actions">
-      <div class="site-icon" id="siteIcon">🌐</div>
-      <button class="header-btn" id="closeBtn">✕</button>
+      <button class="header-btn" id="helpBtn" title="Help">?</button>
+      <button class="header-btn" id="closeBtn" title="Close">✕</button>
     </div>
   </div>
-
   <div class="tabs">
-    <button class="tab active" data-tab="history">History</button>
-    <button class="tab" data-tab="home">Home</button>
-    <button class="tab" data-tab="settings">Settings</button>
+    <button class="tab active" data-tab="history">
+      <span class="tab-icon">📜</span>
+      <span class="tab-label">History</span>
+      <span class="tab-count" id="historyCount">0</span>
+    </button>
+    <button class="tab" data-tab="home">
+      <span class="tab-icon">🏠</span>
+      <span class="tab-label">Home</span>
+    </button>
+    <button class="tab" data-tab="settings">
+      <span class="tab-icon">⚙️</span>
+      <span class="tab-label">Settings</span>
+    </button>
   </div>
-
   <div class="content">
-    <!-- History Tab (Default) -->
     <div class="tab-content active" id="historyTab">
-      <div class="history-empty" id="historyEmpty">
-        <div class="history-empty-icon">📚</div>
-        <div class="history-empty-title">No prompt history yet</div>
-        <div class="history-empty-desc">Enhanced prompts will appear here when you use SuperPrompt on websites</div>
+      <div id="historyEmpty" class="history-empty">
+        <div class="history-empty-icon">🗃️</div>
+        <div class="history-empty-title">No Enhanced Prompts Yet</div>
+        <div class="history-empty-desc">
+          Enhanced prompts will appear here as you use SuperPrompt.
+        </div>
       </div>
-      <div class="history-list" id="historyList">
-        <!-- History items will be populated here -->
+      <div id="historyControls" class="history-controls" style="display:none;">
+        <div class="search-box">
+          <input class="search-input" id="historySearch" placeholder="Search your prompt history..." />
+          <span class="search-icon">🔍</span>
+        </div>
+        <div class="history-actions">
+          <button class="history-action-btn" id="clearHistoryBtn">Clear All</button>
+          <button class="history-action-btn" id="exportHistoryBtn">Export</button>
+        </div>
       </div>
+      <div class="history-list" id="historyList"></div>
     </div>
-
-    <!-- Home Tab -->
     <div class="tab-content" id="homeTab">
       <div class="home-container">
-        <div class="home-logo">$</div>
-        <div class="home-title">SuperPrompt</div>
-        <div class="home-subtitle">AI prompt enhancement for better results</div>
-        
-        <div class="home-guide">
-          <div class="guide-title">
-            🚀 How to use SuperPrompt
-          </div>
-          <div class="guide-step">
-            <div class="step-number">1</div>
-            <div>Go to any website with text inputs (ChatGPT, Claude, etc.)</div>
-          </div>
-          <div class="guide-step">
-            <div class="step-number">2</div>
-            <div>Highlight text in any input field or text area</div>
-          </div>
-          <div class="guide-step">
-            <div class="step-number">3</div>
-            <div>Click the floating SuperPrompt icon that appears</div>
-          </div>
-          <div class="guide-step">
-            <div class="step-number">4</div>
-            <div>Wait for the enhanced prompt and replace your original text</div>
-          </div>
-        </div>
-
-        <div class="home-stats">
+        <div class="home-logo">⚡</div>
+        <div class="home-title">Welcome to SuperPrompt</div>
+        <div class="home-subtitle">Enhance any AI prompt directly from any input box.<br />Just highlight, click the icon, and enjoy smarter results.</div>
+        <div class="quick-stats">
           <div class="stat-card">
             <div class="stat-number" id="totalEnhancements">0</div>
-            <div class="stat-label">Prompts Enhanced</div>
+            <div class="stat-label">Enhanced</div>
           </div>
           <div class="stat-card">
             <div class="stat-number" id="sitesUsed">0</div>
-            <div class="stat-label">Sites Used</div>
+            <div class="stat-label">Sites</div>
           </div>
+          <div class="stat-card">
+            <div class="stat-number" id="successRate">100%</div>
+            <div class="stat-label">Success</div>
+          </div>
+        </div>
+        <div class="home-guide">
+          <div class="guide-title">How to use SuperPrompt</div>
+          <div class="guide-step"><span class="step-number">1</span>Highlight any prompt in an input box or chat.</div>
+          <div class="guide-step"><span class="step-number">2</span>Click the <span style="background:linear-gradient(135deg,#4ade80,#22d3ee);color:white;padding:2px 7px;border-radius:12px;">⚡</span> icon.</div>
+          <div class="guide-step"><span class="step-number">3</span>Choose your enhancement or replace it instantly!</div>
+        </div>
+        <div class="keyboard-shortcuts">
+          <div class="shortcuts-title">Keyboard Shortcuts</div>
+          <div class="shortcut-item"><span class="shortcut-desc">Open Popup</span> <span class="shortcut-key">Ctrl/⌘ + Shift + P</span></div>
+          <div class="shortcut-item"><span class="shortcut-desc">Enhance Selection</span> <span class="shortcut-key">Ctrl/⌘ + Shift + E</span></div>
         </div>
       </div>
     </div>
-
-    <!-- Settings Tab -->
     <div class="tab-content" id="settingsTab">
       <div class="settings-section">
-        <div class="settings-title">
-          🤖 AI Model
-        </div>
-        <div class="model-card">
-          <div class="model-icon">AI</div>
-          <div class="model-info">
-            <div class="model-name">GPT-3.5 Turbo</div>
-            <div class="model-desc">Fast and efficient prompt enhancement</div>
-          </div>
-          <div class="model-status">Active</div>
-        </div>
-        <a href="#" class="settings-link" id="learnModelsLink">Learn about AI models</a>
-      </div>
-
-      <div class="settings-section">
-        <div class="settings-title">
-          ⚙️ Preferences
-        </div>
-        
+        <div class="settings-title">General Settings</div>
         <div class="setting-item">
-          <div>
+          <div class="setting-content">
             <div class="setting-label">Dark Mode</div>
-            <div class="setting-desc">Use dark theme for the extension</div>
+            <div class="setting-desc">Match your system preference or force dark/light.</div>
           </div>
-          <div class="toggle-switch" id="darkModeToggle">
-            <div class="toggle-slider"></div>
-          </div>
+          <button class="toggle-switch" id="darkModeToggle"></button>
         </div>
-
         <div class="setting-item">
-          <div>
+          <div class="setting-content">
             <div class="setting-label">Sound Effects</div>
-            <div class="setting-desc">Play sounds for notifications</div>
+            <div class="setting-desc">Audible feedback on actions.</div>
           </div>
-          <div class="toggle-switch" id="soundToggle">
-            <div class="toggle-slider"></div>
-          </div>
+          <button class="toggle-switch" id="soundToggle"></button>
         </div>
-
         <div class="setting-item">
-          <div>
-            <div class="setting-label">Auto-copy Enhanced</div>
-            <div class="setting-desc">Automatically copy enhanced prompts</div>
+          <div class="setting-content">
+            <div class="setting-label">Auto Copy Enhanced</div>
+            <div class="setting-desc">Copy result to clipboard automatically.</div>
           </div>
-          <div class="toggle-switch" id="autoCopyToggle">
-            <div class="toggle-slider"></div>
+          <button class="toggle-switch" id="autoCopyToggle"></button>
+        </div>
+        <div class="setting-item">
+          <div class="setting-content">
+            <div class="setting-label">Show Floating Icon</div>
+            <div class="setting-desc">Enable/disable enhancer on input fields.</div>
           </div>
+          <button class="toggle-switch" id="showIconToggle"></button>
         </div>
-      </div>
-
-      <div class="settings-section">
-        <div class="settings-title">
-          🔗 Links
+        <div class="setting-item">
+          <div class="setting-content">
+            <div class="setting-label">Enhancement Quality</div>
+            <div class="setting-desc">Choose balance between speed & depth.</div>
+          </div>
+          <select class="setting-select" id="qualitySelect">
+            <option value="fast">Fast</option>
+            <option value="balanced">Balanced</option>
+            <option value="detailed">Detailed</option>
+          </select>
         </div>
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <a href="#" class="settings-link" id="feedbackLink">Send Feedback</a>
-          <a href="#" class="settings-link" id="supportLink">Get Support</a>
-          <a href="#" class="settings-link" id="privacyLink">Privacy Policy</a>
-        </div>
-      </div>
-
-      <div class="version-info">
-        SuperPrompt v1.0.2
       </div>
     </div>
   </div>
-
-  <script src="popup.js"></script>
 </body>
 </html>
