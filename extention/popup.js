@@ -10,7 +10,9 @@ class SuperPromptMainPopup {
       soundEffects: true,
       autoCopy: false,
       showIcon: true,
-      quality: 'balanced'
+      quality: 'balanced',
+      apiKey: '',
+      model: 'gpt-3.5-turbo'
     };
     this.stats = {
       totalEnhancements: 0,
@@ -101,7 +103,7 @@ class SuperPromptMainPopup {
       
       // Development
       'github.com': '🐙', 'gitlab.com': '🦊', 'stackoverflow.com': '📚',
-      'stackexchange.com': '📚', 'codepen.io': '🖊️', 'repl.it': '⚡',
+      'stackexchange.com': '📚', 'codepen.io': '🖊️', 'replit.com': '⚡',
       'codesandbox.io': '📦', 'jsfiddle.net': '🎯', 'glitch.com': '✨',
       'vercel.com': '▲', 'netlify.com': '🌐', 'heroku.com': '💜',
       
@@ -161,6 +163,19 @@ class SuperPromptMainPopup {
     document.getElementById('qualitySelect').addEventListener('change', (e) => {
       this.settings.quality = e.target.value;
       this.saveData();
+    });
+
+    // API settings
+    document.getElementById('apiKeyInput').addEventListener('input', (e) => {
+      this.settings.apiKey = e.target.value.trim();
+      this.saveData();
+      this.broadcastSettings();
+    });
+
+    document.getElementById('modelSelect').addEventListener('change', (e) => {
+      this.settings.model = e.target.value;
+      this.saveData();
+      this.broadcastSettings();
     });
 
     // History controls
@@ -235,8 +250,7 @@ class SuperPromptMainPopup {
       learnModelsLink: 'https://platform.openai.com/docs/models',
       feedbackLink: 'https://github.com/superprompt/extension/issues',
       supportLink: 'https://github.com/superprompt/extension/discussions',
-      privacyLink: 'https://superprompt.dev/privacy',
-      githubLink: 'https://github.com/superprompt/extension'
+      privacyLink: 'https://superprompt.dev/privacy'
     };
 
     Object.entries(links).forEach(([id, url]) => {
@@ -344,6 +358,10 @@ class SuperPromptMainPopup {
     
     // Update quality select
     document.getElementById('qualitySelect').value = this.settings.quality;
+    
+    // Update API settings
+    document.getElementById('apiKeyInput').value = this.settings.apiKey || '';
+    document.getElementById('modelSelect').value = this.settings.model || 'gpt-3.5-turbo';
   }
 
   updateHistoryCount() {
