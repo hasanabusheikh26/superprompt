@@ -1,89 +1,100 @@
-// Minimal SuperPrompt Content Script
+const VERCEL_API_URL = "https://YOUR_VERCEL_DEPLOY_URL/api/enhance";
 let userSignedIn = false;
 
-// Check sign-in status from storage
-chrome.storage.local.get(['superprompt_signedin'], (res) => {
-  userSignedIn = !!res.superprompt_signedin;
-});
-
+chrome.storage.local.get(['superprompt_signedin'], (res) => userSignedIn = !!res.superprompt_signedin);
 chrome.storage.onChanged.addListener((changes) => {
-  if ('superprompt_signedin' in changes) {
-    userSignedIn = changes.superprompt_signedin.newValue;
-  }
+  if ('superprompt_signedin' in changes) userSignedIn = changes.superprompt_signedin.newValue;
 });
 
-// ---- UI + Enhance Logic ----
-let floatingIcon, popupDiv, selectionRange;
+let icon, popup, selectionRange;
+
+function isEditable(el) {
+  return el && (
+    el.nodeName === "TEXTAREA" ||
+    (el.nodeName === "INPUT" && /^(text|search|email|url|tel|password)$/i.test(el.type)) ||
+    el.isContentEditable
+  );
+}
 
 document.addEventListener('mouseup', (e) => {
   if (!userSignedIn) return;
-  const selection = window.getSelection();
-  if (selection && selection.toString().length > 2 && selection.rangeCount) {
-    selectionRange = selection.getRangeAt(0);
-    showFloatingIcon(e.clientX, e.clientY);
-  } else {
-    removeFloatingIcon();
-    removePopup();
-  }
+  setTimeout(() => {
+    const sel = window.getSelection();
+    if (
+      sel && sel.rangeCount &&
+      sel.toString().length > 2 &&
+      isEditable(sel.anchorNode?.parentElement)
+    ) {
+      selectionRange = sel.getRangeAt(0);
+      showFloatingIcon(e.clientX, e.clientY);
+    } else {
+      removeFloatingIcon();
+      removePopup();
+    }
+  }, 10);
 });
 
 function showFloatingIcon(x, y) {
   removeFloatingIcon();
-  floatingIcon = document.createElement("div");
-  floatingIcon.className = "superprompt-floating-icon";
-  floatingIcon.style.top = (window.scrollY + y + 10) + "px";
-  floatingIcon.style.left = (window.scrollX + x - 10) + "px";
-  floatingIcon.style.position = "absolute";
-  floatingIcon.innerHTML = `<img src="${chrome.runtime.getURL('icon.png')}" style="width:24px;height:24px;border-radius:50%;">`;
-  floatingIcon.onclick = () => {
-    showPopup();
-    removeFloatingIcon();
-  };
-  document.body.appendChild(floatingIcon);
+  icon = document.createElement('div');
+  icon.className = 'superprompt-floating-icon';
+  icon.style.position = 'absolute';
+  icon.style.top = (window.scrollY + y + 10) + 'px';
+  icon.style.left = (window.scrollX + x - 10) + 'px';
+  icon.style.width = "38px";
+  icon.style.height = "38px";
+  icon.style.zIndex = "2147483647";
+  icon.style.background = "linear-gradient(135deg, #4ade80 0%, #22d3ee 100%)";
+  icon.style.borderRadius = "50%";
+  icon.style.display = "flex";
+  icon.style.alignItems = "center";
+  icon.style.justifyContent = "center";
+  icon.style.cursor = "pointer";
+  icon.style.boxShadow = "0 4px 16px rgba(0,0,0,0.13)";
+  icon.innerHTML = `<img src="${chrome.runtime.getURL('icon.png')}" style="width:22px;height:22px;border-radius:50%;">`;
+  icon.onclick = () => { showPopup(); removeFloatingIcon(); };
+  document.body.appendChild(icon);
 }
 
-function removeFloatingIcon() {
-  if (floatingIcon) floatingIcon.remove();
-  floatingIcon = null;
-}
+function removeFloatingIcon() { if (icon) icon.remove(); icon = null; }
+function removePopup() { if (popup) popup.remove(); popup = null; }
 
 function showPopup() {
   removePopup();
-  popupDiv = document.createElement("div");
-  popupDiv.className = "superprompt-mini-popup";
-  popupDiv.style.position = "fixed";
-  popupDiv.style.top = "25%";
-  popupDiv.style.left = "50%";
-  popupDiv.style.transform = "translate(-50%, -50%)";
-  popupDiv.style.zIndex = 2147483647;
-
-  popupDiv.innerHTML = `
-    <div style="font-weight:bold;font-size:15px;margin-bottom:10px;">Enhance your text</div>
-    <textarea id="superprompt_input" style="width:100%;height:80px;">${window.getSelection().toString()}</textarea>
-    <input id="superprompt_instruction" placeholder="How should we enhance?" style="width:100%;margin:8px 0;" />
-    <button id="superprompt_enhance_btn" style="width:100%;margin-bottom:4px;">Enhance</button>
-    <div id="superprompt_result" style="margin-top:8px;font-size:14px;"></div>
-    <button id="superprompt_replace_btn" style="width:100%;margin-top:6px;display:none;">Replace selection</button>
+  popup = document.createElement('div');
+  popup.className = 'superprompt-mini-popup';
+  popup.style.position = 'fixed';
+  popup.style.top = '30%';
+  popup.style.left = '50%';
+  popup.style.transform = 'translate(-50%, -50%)';
+  popup.style.background = "#fff";
+  popup.style.border = "1.5px solid #e5e7eb";
+  popup.style.borderRadius = "16px";
+  popup.style.boxShadow = "0 16px 56px rgba(0,0,0,0.13)";
+  popup.style.zIndex = "2147483647";
+  popup.style.padding = "18px";
+  popup.style.width = "330px";
+  popup.innerHTML = `
+    <div style="font-weight:600;font-size:15px;margin-bottom:8px;">Enhance your prompt</div>
+    <textarea id="superprompt_input" style="width:100%;height:65px;border-radius:9px;border:1px solid #eee;padding:8px;font-size:13px;">${window.getSelection().toString()}</textarea>
+    <input id="superprompt_instruction" placeholder="How should we enhance?" style="width:100%;margin:7px 0 0 0;padding:7px 8px;border-radius:7px;border:1px solid #eee;" />
+    <button id="superprompt_enhance_btn" style="width:100%;margin:10px 0 4px 0;">Enhance</button>
+    <div id="superprompt_result" style="margin-top:9px;font-size:14px;"></div>
+    <button id="superprompt_replace_btn" style="width:100%;margin-top:9px;display:none;">Replace selection</button>
     <button id="superprompt_close_btn" style="width:100%;margin-top:3px;">Close</button>
   `;
-
-  document.body.appendChild(popupDiv);
+  document.body.appendChild(popup);
 
   document.getElementById("superprompt_enhance_btn").onclick = async function () {
     const text = document.getElementById("superprompt_input").value;
     const instruction = document.getElementById("superprompt_instruction").value || "Improve this";
-    const btn = this;
-    btn.disabled = true;
-    btn.textContent = "Enhancing...";
-    const res = await fetch("https://YOUR_VERCEL_DEPLOY_URL/api/enhance", {
+    this.disabled = true; this.textContent = "Enhancing...";
+    const res = await fetch(VERCEL_API_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text, instruction })
     }).then(r => r.json()).catch(() => ({ error: "Network error" }));
-
-    btn.disabled = false;
-    btn.textContent = "Enhance";
-
+    this.disabled = false; this.textContent = "Enhance";
     if (res.enhancedText) {
       document.getElementById("superprompt_result").textContent = res.enhancedText;
       document.getElementById("superprompt_replace_btn").style.display = "block";
@@ -99,11 +110,6 @@ function showPopup() {
   document.getElementById("superprompt_close_btn").onclick = removePopup;
 }
 
-function removePopup() {
-  if (popupDiv) popupDiv.remove();
-  popupDiv = null;
-}
-
 function replaceSelection(newText) {
   if (!selectionRange) return;
   const sel = window.getSelection();
@@ -114,11 +120,10 @@ function replaceSelection(newText) {
   removePopup();
 }
 
-// Hide popups if user clicks outside
 document.addEventListener("mousedown", (e) => {
   if (
-    popupDiv && !popupDiv.contains(e.target) &&
-    floatingIcon && !floatingIcon.contains(e.target)
+    popup && !popup.contains(e.target) &&
+    icon && !icon.contains(e.target)
   ) {
     removeFloatingIcon();
     removePopup();
