@@ -1,5 +1,6 @@
 const SUPABASE_URL = "https://zimufmoxijuskqiquelu.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InppbXVmbW94aWp1c2txaXF1ZWx1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwMjIxMzAsImV4cCI6MjA2ODU5ODEzMH0.RNmObsqKUr2nlgBeYJY7Z0W-M1L1pqU4KAXEOEB8VSY";
+
 let supabase;
 
 function injectSupabase(cb) {

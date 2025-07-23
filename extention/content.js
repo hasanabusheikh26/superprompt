@@ -1,4 +1,7 @@
-const VERCEL_API_URL = "https://YOUR_VERCEL_DEPLOY_URL/api/enhance";
+// Update this to match your working endpoint
+const VERCEL_API_URL = "https://superprompt-lac.vercel.app/api/enhance";
+// Or: const VERCEL_API_URL = "https://superprompt-rlc9qv1v1-hass-projects-b72778ab.vercel.app/api/enhance";
+
 let userSignedIn = false;
 
 chrome.storage.local.get(['superprompt_signedin'], (res) => userSignedIn = !!res.superprompt_signedin);
@@ -8,22 +11,28 @@ chrome.storage.onChanged.addListener((changes) => {
 
 let icon, popup, selectionRange;
 
-function isEditable(el) {
-  return el && (
-    el.nodeName === "TEXTAREA" ||
-    (el.nodeName === "INPUT" && /^(text|search|email|url|tel|password)$/i.test(el.type)) ||
-    el.isContentEditable
+function isEditable(node) {
+  if (!node) return false;
+  if (node.nodeType === 3) node = node.parentElement;
+  return (
+    node.nodeName === "TEXTAREA" ||
+    (node.nodeName === "INPUT" && /^(text|search|email|url|tel|password)$/i.test(node.type)) ||
+    node.isContentEditable
   );
 }
 
 document.addEventListener('mouseup', (e) => {
-  if (!userSignedIn) return;
   setTimeout(() => {
+    if (!userSignedIn) {
+      removeFloatingIcon();
+      removePopup();
+      return;
+    }
     const sel = window.getSelection();
     if (
       sel && sel.rangeCount &&
       sel.toString().length > 2 &&
-      isEditable(sel.anchorNode?.parentElement)
+      isEditable(sel.anchorNode)
     ) {
       selectionRange = sel.getRangeAt(0);
       showFloatingIcon(e.clientX, e.clientY);
