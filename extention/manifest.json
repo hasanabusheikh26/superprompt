@@ -9,7 +9,8 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://superprompt-lac.vercel.app/*"
+    "https://api.openai.com/*",
+    "https://*/*"
   ],
   "icons": {
     "16": "icon.png",
