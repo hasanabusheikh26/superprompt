@@ -1,15 +1,14 @@
 {
   "manifest_version": 3,
   "name": "SuperPrompt",
-  "version": "1.2.0",
-  "description": "AI prompt enhancement for better results - like Grammarly for prompts. Highlight text in any input field and enhance instantly.",
+  "version": "1.0.0",
+  "description": "Highlight text, enhance with AI, and replace—just like Grammarly but for any site.",
   "permissions": [
     "activeTab",
     "storage",
     "scripting"
   ],
   "host_permissions": [
-    "https://api.openai.com/*",
     "https://*/*"
   ],
   "icons": {
@@ -23,16 +22,14 @@
       "matches": ["<all_urls>"],
       "js": ["content.js"],
       "css": ["content.css"],
-      "all_frames": false,
-      "run_at": "document_idle",
-      "match_about_blank": false
+      "run_at": "document_idle"
     }
   ],
   "background": {
     "service_worker": "background.js"
   },
   "action": {
-    "default_title": "SuperPrompt - AI Prompt Enhancer",
+    "default_title": "SuperPrompt",
     "default_popup": "popup.html",
     "default_icon": {
       "16": "icon.png",
@@ -40,24 +37,5 @@
       "48": "icon.png",
       "128": "icon.png"
     }
-  },
-  "commands": {
-    "_execute_action": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+P",
-        "mac": "Command+Shift+P"
-      },
-      "description": "Open SuperPrompt popup"
-    },
-    "enhance_selected": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+E",
-        "mac": "Command+Shift+E"
-      },
-      "description": "Enhance selected text"
-    }
-  },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
