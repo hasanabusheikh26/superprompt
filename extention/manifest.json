@@ -2,14 +2,15 @@
   "manifest_version": 3,
   "name": "SuperPrompt",
   "version": "1.0.0",
-  "description": "Highlight text, enhance with AI, and replace—just like Grammarly but for any site.",
+  "description": "Highlight text, enhance with AI, and replace—like Grammarly, but for prompts.",
   "permissions": [
     "activeTab",
     "storage",
     "scripting"
   ],
   "host_permissions": [
-    "https://*/*"
+    "https://superprompt-rlc9qv1v1-hass-projects-b72778ab.vercel.app/*",
+    "https://superprompt-lac.vercel.app/*"
   ],
   "icons": {
     "16": "icon.png",
