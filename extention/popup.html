@@ -8,22 +8,20 @@
 </head>
 <body>
   <div class="header">
-    <div class="logo-section">
-      <img src="icon.png" alt="Logo" style="width:24px;height:24px;border-radius:50%;">
-      <span class="logo-text">SuperPrompt</span>
-    </div>
+    <img src="icon.png" alt="Logo" style="width:24px;height:24px;border-radius:50%;margin-right:8px;">
+    <span class="logo-text">SuperPrompt</span>
   </div>
-  <div id="authSection" style="padding: 28px;">
+  <div id="authSection" style="padding:24px;">
     <form id="authForm">
-      <input id="email" type="email" placeholder="Email" required style="width:100%;margin-bottom:12px;">
+      <input id="email" type="email" placeholder="Email" required style="width:100%;margin-bottom:10px;">
       <input id="password" type="password" placeholder="Password" required style="width:100%;margin-bottom:12px;">
       <button id="signInBtn" type="submit" style="width:100%;margin-bottom:8px;">Sign In / Sign Up</button>
-      <div id="authError" style="color: #f43f5e; margin-top: 8px;"></div>
+      <div id="authError" style="color:#f43f5e;margin-top:8px;"></div>
     </form>
   </div>
-  <div id="loggedInSection" style="display:none; text-align:center; padding: 28px;">
+  <div id="loggedInSection" style="display:none; text-align:center; padding:24px;">
     <div>✅ Signed in!</div>
-    <div style="margin: 18px 0 8px 0; font-size:15px;">Highlight text on any site to enhance it.</div>
+    <div style="margin: 18px 0 8px 0; font-size:15px;">Highlight text in any editable box to enhance.</div>
     <button id="logoutBtn" style="width:100%;">Log Out</button>
   </div>
 </body>
