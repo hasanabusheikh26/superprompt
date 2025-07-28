@@ -79,7 +79,7 @@ async function fetchGPT(prompt) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: "Bearer YOUR_STATIC_GPT_KEY"
+      Authorization: "Bearer YOUR_OPENAI_API_KEY"
     },
     body: JSON.stringify({
       model: "gpt-4",
