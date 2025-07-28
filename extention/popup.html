@@ -1,13 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8" />
   <title>SuperPrompt</title>
-  <style>
-    body { font-family: sans-serif; width: 200px; padding: 10px; }
-  </style>
+  <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
-  <h3>SuperPrompt</h3>
-  <p>Select text on any page and right-click to rewrite.</p>
+  <div class="popup-container">
+    <div class="popup-header">
+      <img src="icon.png" alt="SuperPrompt" class="logo" />
+      <button id="close-popup">✕</button>
+    </div>
+
+    <div class="prompt-wrapper">
+      <label class="section-title">Original Prompt</label>
+      <textarea id="originalPrompt" readonly></textarea>
+
+      <label class="section-title">Add Instructions</label>
+      <textarea id="userInstructions" placeholder="Add extra instructions to guide SuperPrompt…"></textarea>
+
+      <div id="prePrompts" class="pre-prompts">
+        <button class="preprompt">Step-by-step version</button>
+        <button class="preprompt">Sample app format</button>
+        <button class="preprompt">More structured output</button>
+      </div>
+
+      <button id="submitPrompt" class="submit-btn">⚡ Superprompt it</button>
+
+      <div id="loadingState" class="loading" style="display: none;">
+        <div class="glow"></div>
+        <p>Analyzing...</p>
+      </div>
+
+      <div id="resultState" class="result" style="display: none;">
+        <label class="section-title">Enhanced Prompt</label>
+        <textarea id="enhancedPrompt" readonly></textarea>
+
+        <div class="action-buttons">
+          <button id="editMore">✏️ Edit further</button>
+          <button id="replaceText">✅ Replace prompt</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
 </body>
 </html>

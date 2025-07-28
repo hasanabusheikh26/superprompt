@@ -1,27 +1,34 @@
+
+
 {
   "manifest_version": 3,
-  "name": "SuperPrompt",
-  "description": "Rewrite any text on any website using GPT-4. Just highlight and enhance.",
-  "version": "3.0",
-  "permissions": ["scripting", "activeTab"],
-  "host_permissions": ["<all_urls>"],
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"]
-    }
-  ],
-  "action": {
-    "default_title": "SuperPrompt",
-    "default_icon": {
-      "16": "icon.png",
-      "48": "icon.png",
-      "128": "icon.png"
-    }
-  },
-  "icons": {
-    "16": "icon.png",
-    "48": "icon.png",
-    "128": "icon.png"
+    "name": "SuperPrompt",
+    "version": "1.0",
+    "description": "Highlight → Enhance → Replace. World-class prompt assistant.",
+    "permissions": ["scripting", "activeTab", "storage"],
+    "host_permissions": ["<all_urls>"],
+    "action": {
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "assets/icon.png",
+            "48": "assets/icon.png",
+            "128": "assets/icon.png"
+        }
+    },
+    "background": {
+        "service_worker": "scripts/background.js"
+    },
+    "content_scripts": [
+        {
+            "matches": ["<all_urls>"],
+            "js": ["scripts/content.js"],
+            "css": ["styles.css"]
+        }
+    ],
+    "web_accessible_resources": [
+        {
+            "resources": ["assets/icon.png"],
+            "matches": ["<all_urls>"]
+        }
+    ]
   }
-}
