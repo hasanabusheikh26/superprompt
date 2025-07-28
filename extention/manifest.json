@@ -1,28 +1,24 @@
 {
   "manifest_version": 3,
   "name": "SuperPrompt",
-  "description": "Rewrite prompts using AI, like Grammarly for AI.",
-  "version": "1.0",
-  "permissions": ["scripting", "activeTab", "contextMenus", "storage"],
+  "description": "Rewrite any text on any website using GPT-4. Just highlight and enhance.",
+  "version": "3.0",
+  "permissions": ["scripting", "activeTab"],
   "host_permissions": ["<all_urls>"],
-  "background": {
-    "service_worker": "background.js"
-  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
   "action": {
-    "default_popup": "popup.html",
+    "default_title": "SuperPrompt",
     "default_icon": {
       "16": "icon.png",
       "48": "icon.png",
       "128": "icon.png"
     }
   },
-  "content_scripts": [
-    {
-      "matches": ["<all_urls>"],
-      "js": ["content.js"],
-      "run_at": "document_idle"
-    }
-  ],
   "icons": {
     "16": "icon.png",
     "48": "icon.png",
