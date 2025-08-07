@@ -4,6 +4,23 @@ let auth = null;
 // Initialize auth system
 document.addEventListener('DOMContentLoaded', () => {
   auth = new SuperPromptAuth();
+  
+  // Listen for auth success events
+  window.addEventListener('superprompt:auth-success', () => {
+    // Refresh any open popups
+    if (popup) {
+      const text = document.querySelector('.original')?.textContent || '';
+      openPopup(text, null);
+    }
+  });
+  
+  window.addEventListener('superprompt:logout', () => {
+    // Refresh any open popups
+    if (popup) {
+      const text = document.querySelector('.original')?.textContent || '';
+      openPopup(text, null);
+    }
+  });
 });
 
 document.addEventListener("mouseup", (e) => {
@@ -45,6 +62,20 @@ function removeExistingIcon() {
 function openPopup(text, icon) {
   if (popup) popup.remove();
 
+  // Get user info for display
+  const currentUser = auth ? auth.getCurrentUser() : null;
+  const isLoggedIn = auth ? auth.isLoggedIn() : false;
+  
+  const userInfo = isLoggedIn && currentUser ? 
+    `<div class="user-info">
+      <span class="user-email">${currentUser.email}</span>
+      <button id="logout-btn" class="logout-btn">Logout</button>
+    </div>` : 
+    `<div class="user-info">
+      <span class="login-status">Not logged in</span>
+      <button id="login-btn" class="login-btn">Login</button>
+    </div>`;
+
   popup = document.createElement("div");
   popup.className = "superprompt-popup";
   popup.innerHTML = `
@@ -53,6 +84,7 @@ function openPopup(text, icon) {
       <span style="flex: 1; text-align: center; font-weight: 600;">SuperPrompt</span>
       <button id="close-popup">✕</button>
     </div>
+    ${userInfo}
     <pre class="original">${text}</pre>
     <textarea id="instruction" placeholder="Give feedback or add style (e.g., formal, concise)"></textarea>
     <div class="presets">
@@ -87,6 +119,27 @@ function openPopup(text, icon) {
   requestAnimationFrame(() => (popup.style.opacity = "1"));
 
   document.getElementById("close-popup").onclick = () => popup.remove();
+
+  // Handle login/logout buttons
+  const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
+  
+  if (loginBtn) {
+    loginBtn.onclick = () => {
+      // Open auth page in new tab
+      chrome.tabs.create({ url: chrome.runtime.getURL('auth-ui.html') });
+    };
+  }
+  
+  if (logoutBtn) {
+    logoutBtn.onclick = () => {
+      if (auth) {
+        auth.logout();
+        // Refresh the popup to show login status
+        openPopup(text, icon);
+      }
+    };
+  }
 
   document.querySelectorAll(".preset").forEach((btn) => {
     btn.onclick = () => {

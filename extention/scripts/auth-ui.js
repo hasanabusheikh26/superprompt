@@ -116,6 +116,8 @@ class SuperPromptAuthUI {
       
       if (result.success) {
         this.showSuccess('Login successful! Redirecting...');
+        // Trigger auth success event
+        window.dispatchEvent(new CustomEvent('superprompt:auth-success'));
         setTimeout(() => {
           this.redirectToMain();
         }, 1000);
@@ -149,6 +151,8 @@ class SuperPromptAuthUI {
       
       if (result.success) {
         this.showSuccess('Account created! Please check your email to verify your account.');
+        // Trigger auth success event
+        window.dispatchEvent(new CustomEvent('superprompt:auth-success'));
         this.showForm('login');
       } else {
         this.showError(result.error || 'Signup failed');

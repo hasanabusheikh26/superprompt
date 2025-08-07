@@ -65,6 +65,43 @@
         .instructions li {
             margin: 5px 0;
         }
+        
+        .user-status {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 12px;
+            margin: 15px 0;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+            font-size: 13px;
+        }
+        
+        .user-status span {
+            color: #495057;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            max-width: 180px;
+        }
+        
+        .btn-secondary {
+            padding: 6px 12px;
+            background: #6c757d;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .btn-secondary:hover {
+            background: #5a6268;
+        }
     </style>
 </head>
 <body>
@@ -75,6 +112,11 @@
     </div>
     
     <div class="popup-content">
+        <div id="user-status" class="user-status">
+            <span id="status-text">Loading...</span>
+            <button id="auth-btn" class="btn-secondary">Login</button>
+        </div>
+        
         <div class="instructions">
             <strong>How to use:</strong>
             <ol>
@@ -89,5 +131,59 @@
             Open Settings
         </a>
     </div>
+
+    <script>
+        // Check user authentication status
+        document.addEventListener('DOMContentLoaded', async () => {
+            const statusText = document.getElementById('status-text');
+            const authBtn = document.getElementById('auth-btn');
+            
+            try {
+                // Check if user is logged in via localStorage
+                const token = localStorage.getItem('superprompt_token');
+                
+                if (token) {
+                    // Try to validate token with backend
+                    const response = await fetch('https://superprompt-nwhqu7jm8-hass-projects-b72778ab.vercel.app/api/auth/validate', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        statusText.textContent = `Logged in as: ${data.user.email}`;
+                        authBtn.textContent = 'Logout';
+                        authBtn.onclick = () => {
+                            localStorage.removeItem('superprompt_token');
+                            statusText.textContent = 'Not logged in';
+                            authBtn.textContent = 'Login';
+                        };
+                    } else {
+                        // Invalid token
+                        localStorage.removeItem('superprompt_token');
+                        statusText.textContent = 'Not logged in';
+                        authBtn.textContent = 'Login';
+                        authBtn.onclick = () => {
+                            window.open('auth-ui.html', '_blank');
+                        };
+                    }
+                } else {
+                    statusText.textContent = 'Not logged in';
+                    authBtn.textContent = 'Login';
+                    authBtn.onclick = () => {
+                        window.open('auth-ui.html', '_blank');
+                    };
+                }
+            } catch (error) {
+                console.error('Auth check error:', error);
+                statusText.textContent = 'Not logged in';
+                authBtn.textContent = 'Login';
+                authBtn.onclick = () => {
+                    window.open('auth-ui.html', '_blank');
+                };
+            }
+        });
+    </script>
 </body>
 </html> 
