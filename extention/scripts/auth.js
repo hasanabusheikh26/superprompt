@@ -71,36 +71,42 @@ class SuperPromptAuth {
 
   // Authentication Methods
   async signup(email, password) {
+    // Authentication not implemented in backend yet
+    // For now, simulate successful signup
     try {
-      const response = await this.apiRequest('/auth/signup', {
-        method: 'POST',
-        body: JSON.stringify({ email, password })
-      });
-
-      this.setStoredToken(response.token);
-      this.currentUser = response.user;
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Create mock user data
+      const mockUser = { id: 'user_' + Date.now(), email };
+      const mockToken = 'mock_token_' + Date.now();
+      
+      this.setStoredToken(mockToken);
+      this.currentUser = mockUser;
       this.isAuthenticated = true;
-      this.setupTokenRefresh();
 
-      return { success: true, user: response.user };
+      return { success: true, user: mockUser };
     } catch (error) {
       return { success: false, error: error.message };
     }
   }
 
   async login(email, password) {
+    // Authentication not implemented in backend yet
+    // For now, simulate successful login
     try {
-      const response = await this.apiRequest('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify({ email, password })
-      });
-
-      this.setStoredToken(response.token);
-      this.currentUser = response.user;
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Create mock user data
+      const mockUser = { id: 'user_' + Date.now(), email };
+      const mockToken = 'mock_token_' + Date.now();
+      
+      this.setStoredToken(mockToken);
+      this.currentUser = mockUser;
       this.isAuthenticated = true;
-      this.setupTokenRefresh();
 
-      return { success: true, user: response.user };
+      return { success: true, user: mockUser };
     } catch (error) {
       return { success: false, error: error.message };
     }
@@ -125,12 +131,12 @@ class SuperPromptAuth {
   }
 
   async resetPassword(email) {
+    // Authentication not implemented in backend yet
+    // For now, simulate successful password reset
     try {
-      await this.apiRequest('/auth/reset-password', {
-        method: 'POST',
-        body: JSON.stringify({ email })
-      });
-
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
       return { success: true };
     } catch (error) {
       return { success: false, error: error.message };
@@ -138,28 +144,16 @@ class SuperPromptAuth {
   }
 
   async validateToken(token) {
-    try {
-      const response = await this.apiRequest('/auth/validate', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      return response.user;
-    } catch (error) {
-      return null;
-    }
+    // Authentication not implemented in backend yet
+    // For now, always return null to force re-authentication
+    return null;
   }
 
   async refreshToken() {
-    try {
-      const response = await this.apiRequest('/auth/refresh', {
-        method: 'POST'
-      });
-
-      this.setStoredToken(response.token);
-      return true;
-    } catch (error) {
-      this.logout();
-      return false;
-    }
+    // Authentication not implemented in backend yet
+    // For now, always fail to force re-authentication
+    this.logout();
+    return false;
   }
 
   setupTokenRefresh() {

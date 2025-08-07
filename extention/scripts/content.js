@@ -1,9 +1,10 @@
 let popup;
 let auth = null;
 
-// Initialize auth system
+// Initialize auth system (optional for now)
 document.addEventListener('DOMContentLoaded', () => {
-  auth = new SuperPromptAuth();
+  // Auth is not required for basic functionality
+  // auth = new SuperPromptAuth();
 });
 
 document.addEventListener("mouseup", (e) => {
