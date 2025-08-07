@@ -1,4 +1,11 @@
 let popup;
+let auth = null;
+
+// Initialize auth system
+document.addEventListener('DOMContentLoaded', () => {
+  auth = new SuperPromptAuth();
+});
+
 document.addEventListener("mouseup", (e) => {
   const selection = window.getSelection().toString().trim();
   if (!selection) return;
@@ -30,14 +37,25 @@ function openPopup(text, icon) {
   popup.className = "superprompt-popup";
   popup.innerHTML = `
     <div class="popup-header">
-      <span>SuperPrompt</span>
+      <img src="${chrome.runtime.getURL('assets/icon.png')}" style="width: 20px; height: 20px;" />
+      <span style="flex: 1; text-align: center; font-weight: 600;">SuperPrompt</span>
       <button id="close-popup">✕</button>
     </div>
-    <textarea id="instruction">Improve this prompt</textarea>
     <pre class="original">${text}</pre>
+    <textarea id="instruction" placeholder="Give feedback or add style (e.g., formal, concise)"></textarea>
+    <div class="presets">
+      <button class="preset">Step-by-step guide</button>
+      <button class="preset">Clear and concise</button>
+      <button class="preset">Make it friendly</button>
+      <button class="preset">Detailed explanation</button>
+      <button class="preset">Simple language</button>
+    </div>
     <button id="generate">Superprompt it</button>
     <pre id="result"></pre>
-    <button id="replace">Replace in page</button>
+    <div id="post-actions" style="display: none">
+      <button id="edit">Edit prompt</button>
+      <button id="replace">Replace in page</button>
+    </div>
   `;
 
   popup.style.position = "fixed";
@@ -48,6 +66,8 @@ function openPopup(text, icon) {
   popup.style.padding = "20px";
   popup.style.zIndex = "9999";
   popup.style.boxShadow = "0 0 15px rgba(0,0,0,0.2)";
+  popup.style.borderRadius = "10px";
+  popup.style.width = "340px";
   popup.style.transition = "opacity 0.3s ease, transform 0.3s ease";
   popup.style.opacity = "0";
 
@@ -56,11 +76,20 @@ function openPopup(text, icon) {
 
   document.getElementById("close-popup").onclick = () => popup.remove();
 
+  document.querySelectorAll(".preset").forEach((btn) => {
+    btn.onclick = () => {
+      document.getElementById("instruction").value = btn.innerText;
+    };
+  });
+
   document.getElementById("generate").onclick = async () => {
     const instruction = document.getElementById("instruction").value;
     const prompt = `${instruction}\n\n${text}`;
+    document.getElementById("generate").innerText = "Analyzing...";
     const result = await fetchGPT(prompt);
     document.getElementById("result").textContent = result;
+    document.getElementById("generate").style.display = "none";
+    document.getElementById("post-actions").style.display = "flex";
   };
 
   document.getElementById("replace").onclick = () => {
@@ -72,20 +101,45 @@ function openPopup(text, icon) {
     }
     popup.remove();
   };
+
+  document.getElementById("edit").onclick = () => {
+    document.getElementById("generate").innerText = "Superprompt it";
+    document.getElementById("generate").style.display = "block";
+    document.getElementById("post-actions").style.display = "none";
+  };
 }
 
 async function fetchGPT(prompt) {
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: "Bearer YOUR_OPENAI_API_KEY"
-    },
-    body: JSON.stringify({
-      model: "gpt-4",
-      messages: [{ role: "user", content: prompt }]
-    })
-  });
-  const data = await response.json();
-  return data.choices?.[0]?.message?.content || "Error fetching GPT response";
-} 
+  try {
+    // Split the prompt into instruction and text
+    const parts = prompt.split('\n\n');
+    const instruction = parts[0] || 'improve';
+    const text = parts[1] || prompt;
+    
+    const response = await fetch("https://superprompt-nwhqu7jm8-hass-projects-b72778ab.vercel.app/api/enhance", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        text: text,
+        instruction: instruction
+      })
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    const data = await response.json();
+    
+    if (data.success && data.enhancedText) {
+      return data.enhancedText;
+    } else {
+      return data.error || "Error: No enhanced text received";
+    }
+  } catch (error) {
+    console.error('Fetch error:', error);
+    return `Error: ${error.message}`;
+  }
+}

@@ -1,34 +1,39 @@
-
-
 {
   "manifest_version": 3,
-    "name": "SuperPrompt",
-    "version": "1.0",
-    "description": "Highlight → Enhance → Replace. World-class prompt assistant.",
-    "permissions": ["scripting", "activeTab", "storage"],
-    "host_permissions": ["<all_urls>"],
-    "action": {
-        "default_popup": "popup.html",
-        "default_icon": {
-            "16": "assets/icon.png",
-            "48": "assets/icon.png",
-            "128": "assets/icon.png"
-        }
-    },
-    "background": {
-        "service_worker": "scripts/background.js"
-    },
-    "content_scripts": [
-        {
-            "matches": ["<all_urls>"],
-            "js": ["scripts/content.js"],
-            "css": ["styles.css"]
-        }
-    ],
-    "web_accessible_resources": [
-        {
-            "resources": ["assets/icon.png"],
-            "matches": ["<all_urls>"]
-        }
-    ]
+  "name": "SuperPrompt",
+  "description": "Highlight & enhance prompts with AI. Auth required.",
+  "version": "1.2.1",
+  "permissions": [
+    "scripting",
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["scripts/auth.js", "scripts/prompts.js", "scripts/content.js"],
+      "css": ["styles.css"],
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/icon.png", "styles.css", "auth-ui.html", "popup.html"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+
+  "icons": {
+    "16": "assets/icon.png",
+    "32": "assets/icon.png",
+    "48": "assets/icon.png",
+    "128": "assets/icon.png"
   }
+}
