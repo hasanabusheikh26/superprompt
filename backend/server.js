@@ -3,10 +3,19 @@
 const express = require('express');
 const cors = require('cors');
 const rateLimit = require('express-rate-limit');
+const mongoose = require('mongoose');
 require('dotenv').config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/superprompt', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Trust proxy for Vercel
 app.set('trust proxy', true);
@@ -19,6 +28,10 @@ app.use(cors({
 
 // Basic middleware
 app.use(express.json({ limit: '10mb' }));
+
+// Import routes
+const authRoutes = require('./routes/auth');
+const promptRoutes = require('./routes/prompts');
 
 // Rate limiting - generous for testing
 const limiter = rateLimit({
@@ -38,11 +51,19 @@ app.get('/', (req, res) => {
     status: 'running',
     endpoints: {
       health: '/api/health',
-      enhance: '/api/enhance (POST)'
+      enhance: '/api/enhance (POST)',
+      auth: '/api/auth/*',
+      prompts: '/api/prompts/*'
     },
     timestamp: new Date().toISOString()
   });
 });
+
+// Auth routes
+app.use('/api/auth', authRoutes);
+
+// Prompt routes
+app.use('/api/prompts', promptRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

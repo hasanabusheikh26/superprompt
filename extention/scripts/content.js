@@ -1,15 +1,22 @@
 let popup;
 let auth = null;
 
-// Initialize auth system (optional for now)
+// Initialize auth system
 document.addEventListener('DOMContentLoaded', () => {
-  // Auth is not required for basic functionality
-  // auth = new SuperPromptAuth();
+  auth = new SuperPromptAuth();
 });
 
 document.addEventListener("mouseup", (e) => {
+  // Don't create icon if clicking on existing icon or popup
+  if (e.target.closest('.superprompt-icon') || e.target.closest('.superprompt-popup')) {
+    return;
+  }
+
   const selection = window.getSelection().toString().trim();
-  if (!selection) return;
+  if (!selection) {
+    removeExistingIcon();
+    return;
+  }
 
   removeExistingIcon();
   const icon = document.createElement("img");
@@ -20,10 +27,14 @@ document.addEventListener("mouseup", (e) => {
   icon.style.left = `${e.pageX + 10}px`;
   icon.style.transition = "opacity 0.3s ease";
   icon.style.opacity = "0";
+  icon.style.cursor = "pointer";
   document.body.appendChild(icon);
   requestAnimationFrame(() => (icon.style.opacity = "1"));
 
-  icon.onclick = () => openPopup(selection, icon);
+  icon.onclick = (e) => {
+    e.stopPropagation();
+    openPopup(selection, icon);
+  };
 });
 
 function removeExistingIcon() {
