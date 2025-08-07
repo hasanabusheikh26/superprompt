@@ -138,6 +138,10 @@
             const statusText = document.getElementById('status-text');
             const authBtn = document.getElementById('auth-btn');
             
+            // Set initial loading state
+            statusText.textContent = 'Loading...';
+            authBtn.textContent = 'Login';
+            
             try {
                 // Check if user is logged in via localStorage
                 const token = localStorage.getItem('superprompt_token');
@@ -145,7 +149,7 @@
                 if (token) {
                     // Try to validate token with backend
                     try {
-                        const response = await fetch('https://superprompt-7hwu9skcf-hass-projects-b72778ab.vercel.app/api/auth/validate', {
+                        const response = await fetch('https://superprompt-1v119o0os-hass-projects-b72778ab.vercel.app/api/auth/validate', {
                             headers: {
                                 'Authorization': `Bearer ${token}`
                             }
@@ -156,12 +160,18 @@
                             statusText.textContent = `Logged in as: ${data.user.email}`;
                             authBtn.textContent = 'Logout';
                             authBtn.onclick = () => {
+                                // Logout functionality
                                 localStorage.removeItem('superprompt_token');
                                 statusText.textContent = 'Not logged in';
                                 authBtn.textContent = 'Login';
+                                authBtn.onclick = () => {
+                                    window.open('auth-ui.html', '_blank');
+                                };
+                                // Dispatch logout event for other parts of extension
+                                window.dispatchEvent(new CustomEvent('superprompt:logout'));
                             };
                         } else {
-                            // Invalid token or auth not implemented
+                            // Invalid token
                             localStorage.removeItem('superprompt_token');
                             statusText.textContent = 'Not logged in';
                             authBtn.textContent = 'Login';
@@ -170,7 +180,7 @@
                             };
                         }
                     } catch (error) {
-                        // Auth endpoints not implemented yet
+                        // Network error or auth not available
                         console.log('Auth validation failed:', error);
                         localStorage.removeItem('superprompt_token');
                         statusText.textContent = 'Not logged in';
@@ -192,6 +202,26 @@
                 authBtn.textContent = 'Login';
                 authBtn.onclick = () => {
                     window.open('auth-ui.html', '_blank');
+                };
+            }
+        });
+
+        // Listen for auth success messages from auth-ui.html
+        window.addEventListener('message', (event) => {
+            if (event.data.type === 'auth-success') {
+                const statusText = document.getElementById('status-text');
+                const authBtn = document.getElementById('auth-btn');
+                
+                statusText.textContent = `Logged in as: ${event.data.user.email}`;
+                authBtn.textContent = 'Logout';
+                authBtn.onclick = () => {
+                    localStorage.removeItem('superprompt_token');
+                    statusText.textContent = 'Not logged in';
+                    authBtn.textContent = 'Login';
+                    authBtn.onclick = () => {
+                        window.open('auth-ui.html', '_blank');
+                    };
+                    window.dispatchEvent(new CustomEvent('superprompt:logout'));
                 };
             }
         });

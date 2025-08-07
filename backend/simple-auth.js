@@ -10,7 +10,14 @@ const PORT = process.env.PORT || 3000;
 const users = new Map();
 const JWT_SECRET = process.env.JWT_SECRET || 'superprompt-secret-key-2024';
 
-app.use(cors());
+// Configure CORS for Chrome extensions
+app.use(cors({
+  origin: ['chrome-extension://*', 'https://v0.dev', 'https://superprompt-7hwu9skcf-hass-projects-b72778ab.vercel.app'],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+}));
+
 app.use(express.json());
 
 // Generate JWT token
@@ -201,6 +208,37 @@ app.post('/api/auth/reset-password', (req, res) => {
   } catch (error) {
     console.error('Reset password error:', error);
     res.status(500).json({ error: 'Server error during password reset.' });
+  }
+});
+
+// Text enhancement endpoint
+app.post('/api/enhance', async (req, res) => {
+  try {
+    const { text, instruction } = req.body;
+
+    if (!text) {
+      return res.status(400).json({ error: 'Text is required.' });
+    }
+
+    // Simple text enhancement (you can integrate OpenAI here)
+    let enhancedText = text;
+    
+    if (instruction) {
+      enhancedText = `Enhanced: ${text}\n\nInstruction: ${instruction}\n\nResult: ${text} (enhanced based on your instruction)`;
+    } else {
+      enhancedText = `Enhanced: ${text}\n\nThis text has been processed by SuperPrompt.`;
+    }
+
+    res.json({
+      success: true,
+      enhancedText,
+      originalText: text,
+      instruction: instruction || 'No specific instruction provided'
+    });
+
+  } catch (error) {
+    console.error('Enhancement error:', error);
+    res.status(500).json({ error: 'Server error during text enhancement.' });
   }
 });
 

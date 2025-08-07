@@ -1,8 +1,8 @@
 // auth.js - SuperPrompt Authentication System
 class SuperPromptAuth {
   constructor() {
-    // Use the new production auth backend
-    this.baseURL = 'https://superprompt-7hwu9skcf-hass-projects-b72778ab.vercel.app/api';
+    // Use the updated production auth backend
+    this.baseURL = 'https://superprompt-1v119o0os-hass-projects-b72778ab.vercel.app/api';
     this.currentUser = null;
     this.isAuthenticated = false;
     this.init();
@@ -60,9 +60,18 @@ class SuperPromptAuth {
           this.currentUser = user;
           this.isAuthenticated = true;
           this.setupTokenRefresh();
+          console.log('User session restored:', user.email);
+        } else {
+          // Token is invalid, clear it
+          this.clearStoredToken();
         }
       } catch (error) {
-        this.logout();
+        console.log('Token validation failed, but keeping session for now:', error.message);
+        // Don't logout immediately, let the user stay logged in
+        // Only clear token if it's definitely invalid
+        if (error.message.includes('Invalid token') || error.message.includes('User not found')) {
+          this.clearStoredToken();
+        }
       }
     }
   }

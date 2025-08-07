@@ -118,6 +118,10 @@ class SuperPromptAuthUI {
         this.showSuccess('Login successful! Redirecting...');
         // Trigger auth success event
         window.dispatchEvent(new CustomEvent('superprompt:auth-success'));
+        // Update popup if it's open
+        if (window.opener) {
+          window.opener.postMessage({ type: 'auth-success', user: result.user }, '*');
+        }
         setTimeout(() => {
           this.redirectToMain();
         }, 1000);

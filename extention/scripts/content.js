@@ -120,6 +120,20 @@ function openPopup(text, icon) {
 
   document.getElementById("close-popup").onclick = () => popup.remove();
 
+  // Display user info if logged in
+  if (auth && auth.isLoggedIn()) {
+    const user = auth.getCurrentUser();
+    if (user) {
+      const userInfo = document.createElement('div');
+      userInfo.className = 'user-info';
+      userInfo.innerHTML = `
+        <span class="user-email">${user.email}</span>
+        <button class="logout-btn" onclick="localStorage.removeItem('superprompt_token'); this.parentElement.remove();">Logout</button>
+      `;
+      popup.insertBefore(userInfo, popup.firstChild);
+    }
+  }
+
   // Handle login/logout buttons
   const loginBtn = document.getElementById("login-btn");
   const logoutBtn = document.getElementById("logout-btn");
@@ -181,7 +195,7 @@ async function fetchGPT(prompt) {
     const instruction = parts[0] || 'improve';
     const text = parts[1] || prompt;
     
-    const response = await fetch("https://superprompt-7hwu9skcf-hass-projects-b72778ab.vercel.app/api/enhance", {
+    const response = await fetch("https://superprompt-1v119o0os-hass-projects-b72778ab.vercel.app/api/enhance", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
