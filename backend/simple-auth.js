@@ -10,15 +10,18 @@ const PORT = process.env.PORT || 3000;
 const users = new Map();
 const JWT_SECRET = process.env.JWT_SECRET || 'superprompt-secret-key-2024';
 
-// Configure CORS for Chrome extensions
+// Configure CORS for Chrome extensions and web pages
 app.use(cors({
-  origin: ['chrome-extension://*', 'https://v0.dev', 'https://superprompt-7hwu9skcf-hass-projects-b72778ab.vercel.app'],
+  origin: true, // Allow all origins
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
 }));
 
 app.use(express.json());
+
+// Handle preflight requests
+app.options('*', cors());
 
 // Generate JWT token
 const generateToken = (userId) => {
@@ -252,12 +255,15 @@ app.get('/', (req, res) => {
   res.json({ 
     message: 'SuperPrompt Auth API',
     version: '1.0.0',
+    status: 'running',
+    timestamp: new Date().toISOString(),
     endpoints: [
       'POST /api/auth/signup',
       'POST /api/auth/login',
       'GET /api/auth/validate',
       'POST /api/auth/refresh',
-      'POST /api/auth/reset-password'
+      'POST /api/auth/reset-password',
+      'POST /api/enhance'
     ]
   });
 });

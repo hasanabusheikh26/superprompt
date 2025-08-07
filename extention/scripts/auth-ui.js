@@ -116,14 +116,20 @@ class SuperPromptAuthUI {
       
       if (result.success) {
         this.showSuccess('Login successful! Redirecting...');
+        // Store the token
+        localStorage.setItem('superprompt_token', result.token);
         // Trigger auth success event
         window.dispatchEvent(new CustomEvent('superprompt:auth-success'));
         // Update popup if it's open
         if (window.opener) {
           window.opener.postMessage({ type: 'auth-success', user: result.user }, '*');
         }
+        // Close this window and refresh the main page
         setTimeout(() => {
-          this.redirectToMain();
+          window.close();
+          if (window.opener) {
+            window.opener.location.reload();
+          }
         }, 1000);
       } else {
         this.showError(result.error || 'Login failed');

@@ -1,8 +1,8 @@
 // auth.js - SuperPrompt Authentication System
 class SuperPromptAuth {
   constructor() {
-    // Use the updated production auth backend
-    this.baseURL = 'https://superprompt-1v119o0os-hass-projects-b72778ab.vercel.app/api';
+    // Use the latest production auth backend
+    this.baseURL = 'https://superprompt-3asmcqplb-hass-projects-b72778ab.vercel.app/api';
     this.currentUser = null;
     this.isAuthenticated = false;
     this.init();
