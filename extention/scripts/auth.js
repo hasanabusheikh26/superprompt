@@ -1,6 +1,7 @@
 // auth.js - SuperPrompt Authentication System
 class SuperPromptAuth {
   constructor() {
+    // Use a working auth backend or simulate auth
     this.baseURL = 'https://superprompt-nwhqu7jm8-hass-projects-b72778ab.vercel.app/api';
     this.currentUser = null;
     this.isAuthenticated = false;
