@@ -181,7 +181,7 @@ async function fetchGPT(prompt) {
     const instruction = parts[0] || 'improve';
     const text = parts[1] || prompt;
     
-    const response = await fetch("https://superprompt-nwhqu7jm8-hass-projects-b72778ab.vercel.app/api/enhance", {
+    const response = await fetch("https://superprompt-7hwu9skcf-hass-projects-b72778ab.vercel.app/api/enhance", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
