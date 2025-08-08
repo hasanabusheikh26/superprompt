@@ -162,6 +162,7 @@ function openEnhancementModal(originalText) {
         resize: vertical;
         box-sizing: border-box;
         transition: border-color 0.2s, box-shadow 0.2s;
+        color: #1F2937;
       " placeholder="How would you like to enhance this prompt? (e.g., make it more formal, add examples, simplify)"></textarea>
     </div>
     
@@ -185,6 +186,7 @@ function openEnhancementModal(originalText) {
           resize: vertical;
           box-sizing: border-box;
           outline: none;
+          color: #1F2937;
         " placeholder="Enhanced text will appear here..."></textarea>
       </div>
     </div>

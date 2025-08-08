@@ -217,6 +217,11 @@ app.post('/api/auth/reset-password', (req, res) => {
 
 // Text enhancement endpoint with better prompt generation
 app.post('/api/enhance', async (req, res) => {
+  // Set additional CORS headers for this specific endpoint
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
   try {
     const { text, instruction } = req.body;
 
