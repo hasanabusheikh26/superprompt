@@ -21,8 +21,16 @@ app.use(cors({
 
 app.use(express.json());
 
-// Handle preflight requests
+// Handle preflight requests for all routes
 app.options('*', cors());
+
+// Add CORS headers to all responses
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  next();
+});
 
 // Generate JWT token
 const generateToken = (userId) => {

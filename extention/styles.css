@@ -3,21 +3,16 @@
 .superprompt-icon {
   width: 32px !important;
   height: 32px !important;
-  border-radius: 6px !important;
-  background: white !important;
-  padding: 4px !important;
   cursor: pointer !important;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.2) !important;
   transition: all 0.2s ease !important;
   z-index: 9999 !important;
   position: absolute !important;
-  border: 1px solid #E5E7EB !important;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)) !important;
 }
 
 .superprompt-icon:hover {
-  transform: scale(1.1) !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
-  border-color: #10B981 !important;
+  transform: scale(1.15) !important;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.4)) !important;
 }
 
 .superprompt-overlay {

@@ -44,19 +44,18 @@ function createIcon(x, y, text) {
     height: 32px;
     cursor: pointer;
     z-index: 9999;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
     transition: all 0.2s ease;
-    background: white;
-    padding: 4px;
+    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));
   `;
   
   icon.addEventListener('mouseenter', () => {
-    icon.style.transform = 'scale(1.1)';
+    icon.style.transform = 'scale(1.15)';
+    icon.style.filter = 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))';
   });
   
   icon.addEventListener('mouseleave', () => {
     icon.style.transform = 'scale(1)';
+    icon.style.filter = 'drop-shadow(0 2px 4px rgba(0,0,0,0.3))';
   });
 
   icon.onclick = (e) => {
@@ -78,7 +77,7 @@ function createIcon(x, y, text) {
 function openEnhancementModal(originalText) {
   if (popup) popup.remove();
 
-  // Create modal overlay
+  // Create page overlay (not modal)
   const overlay = document.createElement("div");
   overlay.className = "superprompt-overlay";
   overlay.style.cssText = `
@@ -87,27 +86,30 @@ function openEnhancementModal(originalText) {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.3);
     z-index: 10000;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
-    padding: 20px;
+    padding: 40px 20px;
+    backdrop-filter: blur(2px);
   `;
 
-  // Create modal
+  // Create overlay popup
   popup = document.createElement("div");
   popup.className = "superprompt-popup";
   popup.style.cssText = `
     background: white;
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 600px;
+    border-radius: 16px;
+    padding: 32px;
+    max-width: 640px;
     width: 100%;
-    max-height: 80vh;
+    max-height: 85vh;
     overflow-y: auto;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.15);
     position: relative;
+    border: 1px solid #E2E8F0;
+    margin-top: 20px;
   `;
 
   popup.innerHTML = `
