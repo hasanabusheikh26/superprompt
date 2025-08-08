@@ -40,8 +40,8 @@ function createIcon(x, y, text) {
     position: absolute;
     top: ${y + 10}px;
     left: ${x + 10}px;
-    width: 32px;
-    height: 32px;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
     z-index: 9999;
     transition: all 0.2s ease;
@@ -86,13 +86,13 @@ function openEnhancementModal(originalText) {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.3);
+    background: transparent;
     z-index: 10000;
     display: flex;
     align-items: flex-start;
     justify-content: center;
     padding: 40px 20px;
-    backdrop-filter: blur(2px);
+    pointer-events: none;
   `;
 
   // Create overlay popup
@@ -261,9 +261,15 @@ function openEnhancementModal(originalText) {
 
   // Add event listeners
   document.getElementById('close-btn').onclick = () => overlay.remove();
-  overlay.onclick = (e) => {
+  
+  // Handle clicks outside the popup
+  popup.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+  
+  overlay.addEventListener('click', (e) => {
     if (e.target === overlay) overlay.remove();
-  };
+  });
   
   // Focus styles for instruction input
   const instructionInput = document.getElementById('instruction-input');
