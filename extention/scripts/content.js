@@ -93,13 +93,13 @@ function openEnhancementModal(originalText) {
     left: 0;
     right: 0;
     bottom: 0;
-    background: transparent;
+    background: rgba(0, 0, 0, 0.5);
     z-index: 10000;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
-    padding: 40px 20px;
-    pointer-events: none;
+    padding: 20px;
+    pointer-events: auto;
   `;
 
   // Create overlay popup
@@ -107,164 +107,188 @@ function openEnhancementModal(originalText) {
   popup.className = "superprompt-popup";
   popup.style.cssText = `
     background: white;
-    border-radius: 16px;
-    padding: 32px;
-    max-width: 640px;
+    border-radius: 12px;
+    padding: 0;
+    max-width: 500px;
     width: 100%;
-    max-height: 85vh;
-    overflow-y: auto;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+    max-height: 80vh;
+    overflow: hidden;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
     position: relative;
-    border: 1px solid #E2E8F0;
-    margin-top: 20px;
+    border: none;
+    margin: 0;
     pointer-events: auto;
   `;
 
   popup.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <div style="width: 32px; height: 32px; background: #10B981; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="white"/>
-            <path d="M19 15L19.5 17.5L22 18L19.5 18.5L19 21L18.5 18.5L16 18L18.5 17.5L19 15Z" fill="white"/>
-            <path d="M5 15L5.5 17.5L8 18L5.5 18.5L5 21L4.5 18.5L2 18L4.5 17.5L5 15Z" fill="white"/>
-          </svg>
+    <div style="
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      width: 100%;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+    ">
+      <!-- Header with close button -->
+      <div style="
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 20px 24px 16px 24px;
+        border-bottom: 1px solid #E5E7EB;
+      ">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 32px; height: 32px; background: #10B981; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="white"/>
+              <path d="M19 15L19.5 17.5L22 18L19.5 18.5L19 21L18.5 18.5L16 18L18.5 17.5L19 15Z" fill="white"/>
+              <path d="M5 15L5.5 17.5L8 18L5.5 18.5L5 21L4.5 18.5L2 18L4.5 17.5L5 15Z" fill="white"/>
+            </svg>
+          </div>
+          <h2 style="margin: 0; font-size: 18px; color: #1F2937; font-weight: 600;">SuperPrompt</h2>
         </div>
-        <h2 style="margin: 0; font-size: 20px; color: #1F2937; font-weight: 600; letter-spacing: -0.025em;">superprompt</h2>
-      </div>
-      <button id="close-btn" style="
-        background: none;
-        border: none;
-        font-size: 18px;
-        cursor: pointer;
-        color: #9CA3AF;
-        padding: 6px;
-        border-radius: 6px;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s;
-      ">×</button>
-    </div>
-    
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #374151; font-size: 14px;">Original Prompt</label>
-      <div style="
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 16px;
-        font-size: 14px;
-        line-height: 1.6;
-        color: #475569;
-        max-height: 120px;
-        overflow-y: auto;
-        white-space: pre-wrap;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      ">${originalText}</div>
-    </div>
-    
-    <div style="margin-bottom: 20px;">
-      <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #374151; font-size: 14px;">Add your instruction</label>
-      <textarea id="instruction-input" style="
-        width: 100%;
-        min-height: 80px;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 16px;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-        font-size: 14px;
-        line-height: 1.6;
-        resize: vertical;
-        box-sizing: border-box;
-        transition: all 0.2s;
-        color: #475569;
-        background: #FFFFFF;
-      " placeholder="How would you like to enhance this prompt? (e.g., make it more formal, add examples, simplify)"></textarea>
-    </div>
-    
-    <div id="enhanced-section" style="margin-bottom: 24px; display: none;">
-      <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #374151; font-size: 14px;">Enhanced Prompt</label>
-      <div style="
-        background: #F8FAFC;
-        border: 1px solid #E2E8F0;
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 16px;
-      ">
-        <textarea id="enhanced-text" style="
-          width: 100%;
-          min-height: 180px;
+        <button id="close-btn" style="
+          background: none;
           border: none;
-          background: transparent;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-          font-size: 14px;
-          line-height: 1.6;
-          resize: vertical;
-          box-sizing: border-box;
-          outline: none;
-          color: #475569;
-        " placeholder="Enhanced text will appear here..."></textarea>
+          font-size: 20px;
+          cursor: pointer;
+          color: #6B7280;
+          padding: 4px;
+          border-radius: 4px;
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.2s;
+        ">×</button>
       </div>
-      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-        <div style="font-size: 12px; color: #10B981; font-weight: 600;">Score:</div>
-        <div id="score-display" style="font-size: 12px; color: #10B981; font-weight: 600;">--</div>
-        <div style="font-size: 12px; color: #64748B;">percentage score</div>
-        <div style="margin-left: auto; font-size: 12px; color: #64748B;" id="timestamp-display"></div>
+      
+      <!-- Content area -->
+      <div style="
+        padding: 24px;
+        overflow-y: auto;
+        flex: 1;
+      ">
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Original Text</label>
+          <div style="
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 12px;
+            font-size: 14px;
+            line-height: 1.5;
+            color: #374151;
+            max-height: 100px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+          ">${originalText}</div>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+          <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Instructions (Optional)</label>
+          <textarea id="instruction-input" style="
+            width: 100%;
+            min-height: 60px;
+            border: 1px solid #D1D5DB;
+            border-radius: 8px;
+            padding: 12px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+            box-sizing: border-box;
+            transition: all 0.2s;
+            color: #374151;
+            background: #FFFFFF;
+          " placeholder="How would you like to enhance this text? (e.g., make it more formal, concise, detailed)"></textarea>
+        </div>
+        
+        <div id="enhanced-section" style="margin-bottom: 20px; display: none;">
+          <label style="display: block; font-weight: 600; margin-bottom: 8px; color: #374151; font-size: 14px;">Enhanced Text</label>
+          <div style="
+            background: #F9FAFB;
+            border: 1px solid #E5E7EB;
+            border-radius: 8px;
+            padding: 12px;
+            margin-bottom: 12px;
+          ">
+            <textarea id="enhanced-text" style="
+              width: 100%;
+              min-height: 120px;
+              border: none;
+              background: transparent;
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+              font-size: 14px;
+              line-height: 1.5;
+              resize: vertical;
+              box-sizing: border-box;
+              outline: none;
+              color: #374151;
+            " placeholder="Enhanced text will appear here..."></textarea>
+          </div>
+          <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 16px;">
+            <div style="font-size: 12px; color: #10B981; font-weight: 600;">Score:</div>
+            <div id="score-display" style="font-size: 12px; color: #10B981; font-weight: 600;">--</div>
+            <div style="font-size: 12px; color: #6B7280;">%</div>
+            <div style="margin-left: auto; font-size: 12px; color: #6B7280;" id="timestamp-display"></div>
+          </div>
+        </div>
       </div>
-    </div>
-    
-    <div style="display: flex; gap: 12px; justify-content: flex-end; align-items: center;">
-      <button id="edit-btn" style="
-        background: transparent;
-        color: #64748B;
-        border: none;
-        padding: 12px 16px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 500;
-        font-size: 14px;
-        display: none;
-        transition: all 0.2s;
-        align-items: center;
-        gap: 6px;
+      
+      <!-- Footer with buttons -->
+      <div style="
+        padding: 16px 24px 24px 24px;
+        border-top: 1px solid #E5E7EB;
+        background: #FAFAFA;
       ">
-        ✏️ Edit further
-      </button>
-      <button id="replace-btn" style="
-        background: #10B981;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 14px;
-        display: none;
-        transition: all 0.2s;
-        box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4);
-      ">
-        Replace prompt
-      </button>
-      <button id="enhance-btn" style="
-        background: #10B981;
-        color: white;
-        border: none;
-        padding: 12px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-        font-size: 14px;
-        transition: all 0.2s;
-        box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      ">
-        ⚡ Superprompt it
-      </button>
+        <div style="display: flex; gap: 12px; justify-content: flex-end; align-items: center;">
+          <button id="edit-btn" style="
+            background: transparent;
+            color: #6B7280;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 14px;
+            display: none;
+            transition: all 0.2s;
+          ">
+            Edit
+          </button>
+          <button id="replace-btn" style="
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            display: none;
+            transition: all 0.2s;
+          ">
+            Replace
+          </button>
+          <button id="enhance-btn" style="
+            background: #10B981;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.2s;
+          ">
+            Enhance
+          </button>
+        </div>
+      </div>
     </div>
   `;
 
