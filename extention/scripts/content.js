@@ -134,7 +134,7 @@ function openEnhancementModal(originalText) {
         align-items: center;
         justify-content: center;
         transition: all 0.2s;
-      " onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='none'">×</button>
+      ">×</button>
     </div>
     
     <div style="margin-bottom: 20px;">
@@ -170,9 +170,7 @@ function openEnhancementModal(originalText) {
         transition: all 0.2s;
         color: #475569;
         background: #FFFFFF;
-      " placeholder="How would you like to enhance this prompt? (e.g., make it more formal, add examples, simplify)" 
-         onfocus="this.style.borderColor='#10B981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.1)'" 
-         onblur="this.style.borderColor='#E2E8F0'; this.style.boxShadow='none'"></textarea>
+      " placeholder="How would you like to enhance this prompt? (e.g., make it more formal, add examples, simplify)"></textarea>
     </div>
     
     <div id="enhanced-section" style="margin-bottom: 24px; display: none;">
@@ -220,7 +218,7 @@ function openEnhancementModal(originalText) {
         transition: all 0.2s;
         align-items: center;
         gap: 6px;
-      " onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">
+      ">
         ✏️ Edit further
       </button>
       <button id="replace-btn" style="
@@ -235,7 +233,7 @@ function openEnhancementModal(originalText) {
         display: none;
         transition: all 0.2s;
         box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4);
-      " onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#10B981'; this.style.transform='translateY(0)'">
+      ">
         Replace prompt
       </button>
       <button id="enhance-btn" style="
@@ -252,7 +250,7 @@ function openEnhancementModal(originalText) {
         display: flex;
         align-items: center;
         gap: 6px;
-      " onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#10B981'; this.style.transform='translateY(0)'">
+      ">
         ⚡ Superprompt it
       </button>
     </div>
@@ -274,8 +272,45 @@ function openEnhancementModal(originalText) {
     instructionInput.style.boxShadow = '0 0 0 3px rgba(16, 185, 129, 0.1)';
   });
   instructionInput.addEventListener('blur', () => {
-    instructionInput.style.borderColor = '#D1D5DB';
+    instructionInput.style.borderColor = '#E2E8F0';
     instructionInput.style.boxShadow = 'none';
+  });
+  
+  // Add hover effects for buttons
+  const closeBtn = document.getElementById('close-btn');
+  closeBtn.addEventListener('mouseenter', () => {
+    closeBtn.style.background = '#F3F4F6';
+  });
+  closeBtn.addEventListener('mouseleave', () => {
+    closeBtn.style.background = 'none';
+  });
+  
+  const editBtn = document.getElementById('edit-btn');
+  editBtn.addEventListener('mouseenter', () => {
+    editBtn.style.background = '#F1F5F9';
+  });
+  editBtn.addEventListener('mouseleave', () => {
+    editBtn.style.background = 'transparent';
+  });
+  
+  const replaceBtn = document.getElementById('replace-btn');
+  replaceBtn.addEventListener('mouseenter', () => {
+    replaceBtn.style.background = '#059669';
+    replaceBtn.style.transform = 'translateY(-1px)';
+  });
+  replaceBtn.addEventListener('mouseleave', () => {
+    replaceBtn.style.background = '#10B981';
+    replaceBtn.style.transform = 'translateY(0)';
+  });
+  
+  const enhanceBtn = document.getElementById('enhance-btn');
+  enhanceBtn.addEventListener('mouseenter', () => {
+    enhanceBtn.style.background = '#059669';
+    enhanceBtn.style.transform = 'translateY(-1px)';
+  });
+  enhanceBtn.addEventListener('mouseleave', () => {
+    enhanceBtn.style.background = '#10B981';
+    enhanceBtn.style.transform = 'translateY(0)';
   });
   
   document.getElementById('enhance-btn').onclick = async () => {
