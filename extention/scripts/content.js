@@ -111,108 +111,148 @@ function openEnhancementModal(originalText) {
   `;
 
   popup.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #E5E7EB;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <img src="${chrome.runtime.getURL('assets/icon.png')}" style="width: 24px; height: 24px;" alt="SuperPrompt">
-        <h2 style="margin: 0; font-size: 18px; color: #1F2937; font-weight: 600;">superprompt</h2>
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <div style="width: 32px; height: 32px; background: #10B981; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
+          <img src="${chrome.runtime.getURL('assets/icon.png')}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="SuperPrompt">
+        </div>
+        <h2 style="margin: 0; font-size: 20px; color: #1F2937; font-weight: 600; letter-spacing: -0.025em;">superprompt</h2>
       </div>
       <button id="close-btn" style="
         background: none;
         border: none;
-        font-size: 20px;
+        font-size: 18px;
         cursor: pointer;
-        color: #6B7280;
-        padding: 4px;
-        border-radius: 4px;
+        color: #9CA3AF;
+        padding: 6px;
+        border-radius: 6px;
         width: 32px;
         height: 32px;
         display: flex;
         align-items: center;
         justify-content: center;
-      ">×</button>
+        transition: all 0.2s;
+      " onmouseover="this.style.background='#F3F4F6'" onmouseout="this.style.background='none'">×</button>
     </div>
     
-    <div style="margin-bottom: 16px;">
-      <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151; font-size: 14px;">Original Prompt</label>
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #374151; font-size: 14px;">Original Prompt</label>
       <div style="
-        background: #F9FAFB;
-        border: 1px solid #E5E7EB;
-        border-radius: 8px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
         padding: 16px;
         font-size: 14px;
-        line-height: 1.5;
-        color: #1F2937;
+        line-height: 1.6;
+        color: #475569;
         max-height: 120px;
         overflow-y: auto;
         white-space: pre-wrap;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
       ">${originalText}</div>
     </div>
     
-    <div style="margin-bottom: 16px;">
-      <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151; font-size: 14px;">Add your instruction</label>
+    <div style="margin-bottom: 20px;">
+      <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #374151; font-size: 14px;">Add your instruction</label>
       <textarea id="instruction-input" style="
         width: 100%;
         min-height: 80px;
-        border: 1px solid #D1D5DB;
-        border-radius: 8px;
-        padding: 12px;
-        font-family: inherit;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 16px;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
         font-size: 14px;
-        line-height: 1.5;
+        line-height: 1.6;
         resize: vertical;
         box-sizing: border-box;
-        transition: border-color 0.2s, box-shadow 0.2s;
-        color: #1F2937;
-      " placeholder="How would you like to enhance this prompt? (e.g., make it more formal, add examples, simplify)"></textarea>
+        transition: all 0.2s;
+        color: #475569;
+        background: #FFFFFF;
+      " placeholder="How would you like to enhance this prompt? (e.g., make it more formal, add examples, simplify)" 
+         onfocus="this.style.borderColor='#10B981'; this.style.boxShadow='0 0 0 3px rgba(16, 185, 129, 0.1)'" 
+         onblur="this.style.borderColor='#E2E8F0'; this.style.boxShadow='none'"></textarea>
     </div>
     
-    <div id="enhanced-section" style="margin-bottom: 20px; display: none;">
-      <label style="display: block; font-weight: 500; margin-bottom: 8px; color: #374151; font-size: 14px;">Enhanced Prompt</label>
+    <div id="enhanced-section" style="margin-bottom: 24px; display: none;">
+      <label style="display: block; font-weight: 600; margin-bottom: 12px; color: #374151; font-size: 14px;">Enhanced Prompt</label>
       <div style="
-        background: #F9FAFB;
-        border: 1px solid #E5E7EB;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 12px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
       ">
         <textarea id="enhanced-text" style="
           width: 100%;
-          min-height: 150px;
+          min-height: 180px;
           border: none;
           background: transparent;
-          font-family: inherit;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
           font-size: 14px;
-          line-height: 1.5;
+          line-height: 1.6;
           resize: vertical;
           box-sizing: border-box;
           outline: none;
-          color: #1F2937;
+          color: #475569;
         " placeholder="Enhanced text will appear here..."></textarea>
+      </div>
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+        <div style="font-size: 12px; color: #10B981; font-weight: 600;">Score:</div>
+        <div id="score-display" style="font-size: 12px; color: #10B981; font-weight: 600;">--</div>
+        <div style="font-size: 12px; color: #64748B;">percentage score</div>
+        <div style="margin-left: auto; font-size: 12px; color: #64748B;" id="timestamp-display"></div>
       </div>
     </div>
     
-    <div style="display: flex; gap: 12px; justify-content: flex-end;">
-      <button id="replace-btn" style="
+    <div style="display: flex; gap: 12px; justify-content: flex-end; align-items: center;">
+      <button id="edit-btn" style="
         background: transparent;
-        color: #10B981;
-        border: 1px solid #10B981;
-        padding: 10px 20px;
+        color: #64748B;
+        border: none;
+        padding: 12px 16px;
         border-radius: 8px;
         cursor: pointer;
         font-weight: 500;
         font-size: 14px;
         display: none;
-      ">🔄 Replace prompt</button>
+        transition: all 0.2s;
+        align-items: center;
+        gap: 6px;
+      " onmouseover="this.style.background='#F1F5F9'" onmouseout="this.style.background='transparent'">
+        ✏️ Edit further
+      </button>
+      <button id="replace-btn" style="
+        background: #10B981;
+        color: white;
+        border: none;
+        padding: 12px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+        font-size: 14px;
+        display: none;
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4);
+      " onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#10B981'; this.style.transform='translateY(0)'">
+        Replace prompt
+      </button>
       <button id="enhance-btn" style="
         background: #10B981;
         color: white;
         border: none;
-        padding: 10px 20px;
+        padding: 12px 20px;
         border-radius: 8px;
         cursor: pointer;
-        font-weight: 500;
+        font-weight: 600;
         font-size: 14px;
-      ">⚡ Superprompt it</button>
+        transition: all 0.2s;
+        box-shadow: 0 1px 3px rgba(16, 185, 129, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      " onmouseover="this.style.background='#059669'; this.style.transform='translateY(-1px)'" onmouseout="this.style.background='#10B981'; this.style.transform='translateY(0)'">
+        ⚡ Superprompt it
+      </button>
     </div>
   `;
 
@@ -240,25 +280,40 @@ function openEnhancementModal(originalText) {
     const instruction = document.getElementById('instruction-input').value.trim();
     const enhanceBtn = document.getElementById('enhance-btn');
     const replaceBtn = document.getElementById('replace-btn');
+    const editBtn = document.getElementById('edit-btn');
     const enhancedSection = document.getElementById('enhanced-section');
     const enhancedTextarea = document.getElementById('enhanced-text');
+    const scoreDisplay = document.getElementById('score-display');
+    const timestampDisplay = document.getElementById('timestamp-display');
     
     // Show loading state
     enhanceBtn.innerHTML = '<span style="display: inline-flex; align-items: center; gap: 8px;"><div style="width: 16px; height: 16px; border: 2px solid transparent; border-top-color: currentColor; border-radius: 50%; animation: spin 1s linear infinite;"></div>Analyzing...</span>';
     enhanceBtn.disabled = true;
+    enhanceBtn.style.background = '#9CA3AF';
     
     try {
       // Call the enhance API
-      const enhancedText = await callEnhanceAPI(originalText, instruction);
+      const result = await callEnhanceAPI(originalText, instruction);
       
       // Show the enhanced section
       enhancedSection.style.display = 'block';
-      enhancedTextarea.value = enhancedText;
+      enhancedTextarea.value = result.enhancedText || result;
+      
+      // Update score and timestamp if available
+      if (result.score) {
+        scoreDisplay.textContent = result.score + '%';
+      }
+      if (result.timestamp) {
+        const date = new Date(result.timestamp);
+        timestampDisplay.textContent = date.toLocaleTimeString();
+      }
       
       // Update buttons
       enhanceBtn.innerHTML = '⚡ Re-enhance';
       enhanceBtn.disabled = false;
+      enhanceBtn.style.background = '#10B981';
       replaceBtn.style.display = 'inline-block';
+      editBtn.style.display = 'inline-flex';
       
       // Show success message
       showToast('✨ Text enhanced successfully!');
@@ -267,10 +322,18 @@ function openEnhancementModal(originalText) {
       console.error('Enhancement failed:', error);
       enhanceBtn.innerHTML = '⚡ Superprompt it';
       enhanceBtn.disabled = false;
+      enhanceBtn.style.background = '#10B981';
       showToast('❌ Enhancement failed. Please try again.', 'error');
     }
   };
   
+  document.getElementById('edit-btn').onclick = () => {
+    // Allow editing the enhanced text
+    const enhancedTextarea = document.getElementById('enhanced-text');
+    enhancedTextarea.focus();
+    showToast('📝 You can now edit the enhanced text', 'info');
+  };
+
   document.getElementById('replace-btn').onclick = () => {
     const enhancedText = document.getElementById('enhanced-text').value;
     replaceOriginalText(enhancedText);
@@ -296,20 +359,20 @@ async function callEnhanceAPI(text, instruction = '') {
   try {
     const response = await fetch('https://superprompt-3asmcqplb-hass-projects-b72778ab.vercel.app/api/enhance', {
       method: 'POST',
-      headers: {
+    headers: {
         'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ 
+    },
+    body: JSON.stringify({
         text: text,
         instruction: instruction || 'improve this text'
-      })
-    });
+    })
+  });
 
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
+  const data = await response.json();
     
     if (data.success && data.enhancedText) {
       return data.enhancedText;

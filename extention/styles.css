@@ -36,15 +36,16 @@
 
 .superprompt-popup {
   background: white !important;
-  border-radius: 12px !important;
-  padding: 24px !important;
-  max-width: 600px !important;
+  border-radius: 16px !important;
+  padding: 32px !important;
+  max-width: 640px !important;
   width: 100% !important;
-  max-height: 80vh !important;
+  max-height: 85vh !important;
   overflow-y: auto !important;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.1) !important;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15) !important;
   position: relative !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif !important;
+  border: 1px solid #E2E8F0 !important;
 }
 
 @media (max-width: 640px) {
