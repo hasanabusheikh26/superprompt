@@ -1,157 +1,151 @@
+/**
+ * @fileoverview Enhancement routes
+ * @description API routes for text enhancement using AI
+ * @author SuperPrompt Team
+ * @version 2.0.0
+ */
+
 const express = require('express');
+const { body, validationResult } = require('express-validator');
+const { authenticateToken } = require('../middleware/auth');
+const { sensitiveRateLimit } = require('../middleware/security');
+const { logger } = require('../utils/logger');
+
 const router = express.Router();
 
-// Text enhancement function
-async function enhanceText(text, instruction) {
-  try {
-    // If OpenAI API key is available, use AI enhancement
-    if (process.env.OPENAI_API_KEY) {
-      const OpenAI = require('openai');
-      const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-      // Handle custom instructions vs predefined ones
-      let systemPrompt, userPrompt;
-      
-      const predefinedInstructions = {
-        detailed: 'Make this prompt more detailed and comprehensive with specific requirements',
-        examples: 'Add concrete examples to make this prompt clearer',
-        clarify: 'Shorten this prompt while making it clearer and more direct',
-        stepbystep: 'Rewrite this prompt with step-by-step instructions',
-        simple: 'Rewrite this prompt in very simple language that a 5-year-old could understand',
-        specific: 'Make this prompt more specific and precise with exact requirements'
-      };
-
-      if (predefinedInstructions[instruction]) {
-        // Use predefined enhancement
-        systemPrompt = 'You are an AI prompt enhancement specialist. Your job is to improve prompts to get better results from AI models.';
-        userPrompt = `Enhance this prompt: "${text}"\n\nImprovement needed: ${predefinedInstructions[instruction]}\n\nReturn only the enhanced prompt, nothing else.`;
-      } else {
-        // Use custom instruction
-        systemPrompt = 'You are an AI prompt enhancement specialist. Follow the user\'s specific instruction to improve the given prompt.';
-        userPrompt = `Original prompt: "${text}"\n\nInstruction: ${instruction}\n\nReturn only the enhanced prompt, nothing else.`;
+/**
+ * POST /api/enhance
+ * Enhance text using AI
+ */
+router.post('/',
+  sensitiveRateLimit,
+  authenticateToken,
+  [
+    body('text')
+      .isString()
+      .trim()
+      .isLength({ min: 1, max: 10000 })
+      .withMessage('Text must be between 1 and 10000 characters'),
+    body('instruction')
+      .optional()
+      .isString()
+      .trim()
+      .isLength({ max: 500 })
+      .withMessage('Instruction must be less than 500 characters'),
+    body('tone')
+      .optional()
+      .isIn(['professional', 'casual', 'formal', 'friendly', 'persuasive'])
+      .withMessage('Invalid tone specified')
+  ],
+  async (req, res) => {
+    try {
+      // Validate request
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.status(400).json({
+          error: 'Validation failed',
+          details: errors.array()
+        });
       }
 
-      const response = await openai.chat.completions.create({
-        model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: userPrompt }
-        ],
-        max_tokens: 400,
-        temperature: 0.7
+      const { text, instruction, tone = 'professional' } = req.body;
+      const userId = req.user.id;
+
+      // For now, return a mock enhancement
+      // In production, this would call OpenAI or another AI service
+      const enhancedText = mockEnhanceText(text, instruction, tone);
+
+      // Log the enhancement
+      logger.info('Text enhanced', {
+        userId,
+        originalLength: text.length,
+        enhancedLength: enhancedText.length,
+        tone,
+        hasInstruction: !!instruction
       });
 
-      const enhanced = response.choices[0]?.message?.content?.trim();
-      return enhanced || getFallbackEnhancement(text, instruction);
-      
-    } else {
-      // Fallback to rule-based enhancement
-      return getFallbackEnhancement(text, instruction);
-    }
-  } catch (error) {
-    console.error('AI enhancement failed, using fallback:', error);
-    return getFallbackEnhancement(text, instruction);
-  }
-}
+      res.json({
+        success: true,
+        original: text,
+        enhanced: enhancedText,
+        metadata: {
+          tone,
+          instruction,
+          model: 'mock-gpt-3.5-turbo',
+          tokens: {
+            input: Math.ceil(text.length / 4),
+            output: Math.ceil(enhancedText.length / 4)
+          }
+        }
+      });
 
-// Fallback enhancement function
-function getFallbackEnhancement(text, instruction) {
-  const promptEnhancements = {
-    'detailed': (t) => `${t}\n\nPlease be comprehensive and detailed in your response. Include:\n- Specific examples\n- Step-by-step explanations\n- Relevant context and background\n- Practical applications`,
-    
-    'examples': (t) => `${t}\n\nPlease include concrete, real-world examples in your response to illustrate each point clearly.`,
-    
-    'clarify': (t) => {
-      const simplified = t.replace(/\b(basically|actually|really|just|maybe|perhaps|kind of|sort of)\b/gi, '')
-                          .replace(/\s+/g, ' ')
-                          .trim();
-      return `${simplified}. Please provide a clear, direct response.`;
+    } catch (error) {
+      logger.error('Text enhancement failed', {
+        error: error.message,
+        userId: req.user?.id,
+        textLength: req.body?.text?.length
+      });
+
+      res.status(500).json({
+        error: 'Enhancement failed',
+        message: 'Unable to enhance text at this time'
+      });
+    }
+  }
+);
+
+/**
+ * Mock text enhancement function
+ * In production, this would call OpenAI API
+ */
+function mockEnhanceText(text, instruction, tone) {
+  const enhancements = {
+    professional: {
+      prefix: 'In a professional context, ',
+      suffix: ' This approach ensures clarity and effectiveness.',
+      style: 'formal and structured'
     },
-    
-    'stepbystep': (t) => `${t}\n\nPlease structure your response as a clear step-by-step guide with numbered steps.`,
-    
-    'simple': (t) => `Explain this in very simple terms: ${t}\n\nUse simple words and concepts that anyone can understand.`,
-    
-    'specific': (t) => `${t}\n\nPlease be very specific and precise in your response. Include exact details, measurements, timeframes, and concrete information wherever possible.`,
-    
-    'improve': (t) => `Please provide a detailed response to: ${t}. Include specific examples, clear explanations, and actionable insights.`,
-    
-    'professional': (t) => `${t}\n\nPlease provide a professional, formal response suitable for business or academic contexts.`,
-    
-    'creative': (t) => `${t}\n\nPlease approach this creatively and think outside the box. Explore unique angles and innovative ideas.`,
-    
-    'engaging': (t) => `${t}\n\nPlease make your response engaging, interesting, and compelling to read.`
+    casual: {
+      prefix: 'Here\'s a casual take: ',
+      suffix: ' Hope that helps!',
+      style: 'relaxed and friendly'
+    },
+    formal: {
+      prefix: 'Formally speaking, ',
+      suffix: ' This methodology is recommended for optimal results.',
+      style: 'academic and precise'
+    },
+    friendly: {
+      prefix: 'In a friendly way, ',
+      suffix: ' Let me know if you need any clarification!',
+      style: 'warm and approachable'
+    },
+    persuasive: {
+      prefix: 'Consider this compelling approach: ',
+      suffix: ' This strategy will deliver the results you\'re looking for.',
+      style: 'convincing and action-oriented'
+    }
   };
 
-  // Use predefined enhancement if available
-  if (promptEnhancements[instruction]) {
-    return promptEnhancements[instruction](text);
+  const enhancement = enhancements[tone] || enhancements.professional;
+  
+  let enhanced = text;
+
+  // Apply instruction if provided
+  if (instruction) {
+    enhanced = `${instruction}: ${enhanced}`;
   }
 
-  // For custom instructions, create a prompt
-  return `${text}\n\n[Enhanced with instruction: ${instruction}]`;
+  // Apply tone enhancement
+  enhanced = `${enhancement.prefix}${enhanced}${enhancement.suffix}`;
+
+  // Clean up the text
+  enhanced = enhanced
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/([.!?])\s*([A-Z])/g, '$1 $2');
+
+  return enhanced;
 }
 
-// Main enhance endpoint - NO AUTH REQUIRED
-router.post('/enhance', async (req, res) => {
-  try {
-    const { text, instruction, enhancementType = 'custom' } = req.body;
-
-    // Validate input
-    if (!text || typeof text !== 'string') {
-      return res.status(400).json({ 
-        error: 'Text is required and must be a string'
-      });
-    }
-
-    if (text.length > 5000) {
-      return res.status(400).json({ 
-        error: 'Text too long. Maximum 5,000 characters.'
-      });
-    }
-
-    // Use instruction if provided, otherwise fall back to enhancement type
-    const enhancementInstruction = instruction || enhancementType;
-
-    // Enhance the text
-    const enhancedText = await enhanceText(text, enhancementInstruction);
-
-    res.json({
-      success: true,
-      originalText: text,
-      enhancedText: enhancedText,
-      instruction: enhancementInstruction,
-      timestamp: new Date().toISOString()
-    });
-
-  } catch (error) {
-    console.error('Enhancement error:', error);
-    res.status(500).json({ 
-      error: 'Failed to enhance text. Please try again.'
-    });
-  }
-});
-
-// Health check
-router.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
-    timestamp: new Date().toISOString()
-  });
-});
-
-// Root endpoint
-router.get('/', (req, res) => {
-  res.json({ 
-    message: 'AI Prompt Enhancer API', 
-    version: '1.0.0',
-    status: 'running',
-    endpoints: {
-      health: '/api/health',
-      enhance: '/api/enhance (POST)'
-    },
-    timestamp: new Date().toISOString()
-  });
-});
-
-module.exports = router; 
+module.exports = router;

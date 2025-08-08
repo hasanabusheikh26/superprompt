@@ -15,7 +15,14 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["scripts/auth.js", "scripts/prompts.js", "scripts/content.js"],
+      "js": [
+        "components/UIComponents.js",
+        "components/AuthManager.js", 
+        "components/PromptManager.js",
+        "scripts/auth.js", 
+        "scripts/prompts.js", 
+        "scripts/content.js"
+      ],
       "css": ["styles.css"],
       "all_frames": true
     }

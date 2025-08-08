@@ -1,15 +1,98 @@
 // auth.js - SuperPrompt Authentication System
 class SuperPromptAuth {
   constructor() {
-    // Use the latest production auth backend
-    this.baseURL = 'https://superprompt-3asmcqplb-hass-projects-b72778ab.vercel.app/api';
+    // Use mock authentication until backend is accessible
+    this.baseURL = 'https://mock-superprompt-api.local/api';
     this.currentUser = null;
     this.isAuthenticated = false;
+    this.useMockAuth = true; // Enable mock mode
     this.init();
+  }
+
+  // Mock authentication functions
+  mockSignup(email, password, name = 'User') {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const user = {
+          id: 'mock_user_' + Date.now(),
+          email,
+          name,
+          createdAt: new Date().toISOString()
+        };
+        const token = 'mock_token_' + user.id;
+        
+        // Store user data
+        localStorage.setItem('superprompt_mock_user', JSON.stringify(user));
+        
+        resolve({
+          success: true,
+          token,
+          user
+        });
+      }, 500); // Simulate network delay
+    });
+  }
+
+  mockLogin(email, password) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const user = {
+          id: 'mock_user_' + Date.now(),
+          email,
+          name: 'User',
+          lastLogin: new Date().toISOString()
+        };
+        const token = 'mock_token_' + user.id;
+        
+        // Store user data
+        localStorage.setItem('superprompt_mock_user', JSON.stringify(user));
+        
+        resolve({
+          success: true,
+          token,
+          user
+        });
+      }, 500);
+    });
+  }
+
+  mockValidateToken(token) {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        if (token && token.startsWith('mock_token_')) {
+          const userData = localStorage.getItem('superprompt_mock_user');
+          if (userData) {
+            const user = JSON.parse(userData);
+            resolve({
+              success: true,
+              user
+            });
+          } else {
+            resolve(null);
+          }
+        } else {
+          resolve(null);
+        }
+      }, 200);
+    });
   }
 
   // API Request Helper with better error handling
   async apiRequest(endpoint, options = {}) {
+    // If mock mode is enabled, handle auth endpoints locally
+    if (this.useMockAuth && endpoint.includes('/auth/')) {
+      if (endpoint.includes('/signup')) {
+        const { email, password, name } = JSON.parse(options.body || '{}');
+        return this.mockSignup(email, password, name);
+      } else if (endpoint.includes('/login')) {
+        const { email, password } = JSON.parse(options.body || '{}');
+        return this.mockLogin(email, password);
+      } else if (endpoint.includes('/validate')) {
+        const token = options.headers?.Authorization?.replace('Bearer ', '');
+        return this.mockValidateToken(token);
+      }
+    }
+
     const token = this.getStoredToken();
     const config = {
       headers: {

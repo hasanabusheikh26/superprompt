@@ -12,10 +12,11 @@ const JWT_SECRET = process.env.JWT_SECRET || 'superprompt-secret-key-2024';
 
 // Configure CORS for Chrome extensions and web pages
 app.use(cors({
-  origin: true, // Allow all origins
-  credentials: true,
+  origin: '*', // Allow all origins
+  credentials: false, // Don't allow credentials with wildcard origin
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept']
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Origin', 'Accept'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
 }));
 
 app.use(express.json());
