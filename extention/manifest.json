@@ -1,46 +1,41 @@
 {
   "manifest_version": 3,
   "name": "SuperPrompt",
-  "description": "Highlight & enhance prompts with AI. Auth required.",
-  "version": "1.2.1",
+  "version": "1.0.0",
+  "description": "Enhance any text with AI - just highlight, click, enhance, edit, and replace!",
+  
   "permissions": [
-    "scripting",
-    "activeTab",
-    "storage"
+    "activeTab"
   ],
-  "host_permissions": [
-    "<all_urls>"
-  ],
-
+  
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": [
-        "components/UIComponents.js",
-        "components/AuthManager.js", 
-        "components/PromptManager.js",
-        "scripts/auth.js", 
-        "scripts/prompts.js", 
-        "scripts/content.js"
-      ],
-      "css": ["styles.css"],
-      "all_frames": true
+      "js": ["scripts/content.js"],
+      "css": ["styles.css"]
     }
   ],
+  
   "action": {
-    "default_popup": "popup.html"
-  },
-  "web_accessible_resources": [
-    {
-      "resources": ["assets/icon.png", "styles.css", "auth-ui.html", "popup.html"],
-      "matches": ["<all_urls>"]
+    "default_popup": "popup.html",
+    "default_title": "SuperPrompt - Text Enhancement",
+    "default_icon": {
+      "16": "assets/icon.png",
+      "48": "assets/icon.png",
+      "128": "assets/icon.png"
     }
-  ],
-
+  },
+  
   "icons": {
     "16": "assets/icon.png",
-    "32": "assets/icon.png",
     "48": "assets/icon.png",
     "128": "assets/icon.png"
-  }
+  },
+  
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }
