@@ -4,7 +4,8 @@
 
 const CONFIG = {
   OPENAI_API_KEY: 'your-openai-api-key-here', // Replace with your actual API key
-  OPENAI_MODEL: 'gpt-3.5-turbo',
+  OPENAI_MODEL: 'gpt-4', // Primary model - will fallback to gpt-3.5-turbo if not available
+  FALLBACK_MODEL: 'gpt-3.5-turbo', // Fallback model
   MAX_TOKENS: 1000,
   TEMPERATURE: 0.7
 };

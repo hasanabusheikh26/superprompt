@@ -29,7 +29,7 @@
 
 ## 🚀 Features
 
-- **Real OpenAI Enhancement** - Uses GPT-3.5-turbo for professional enhancement
+- **Real OpenAI Enhancement** - Uses GPT-4 by default, falls back to GPT-3.5-turbo if not available
 - **Smart Fallback** - Falls back to local enhancement if API fails
 - **Privacy Focused** - API key stays in your browser
 - **Universal Compatibility** - Works on all sites
@@ -37,9 +37,10 @@
 ## 💰 Cost
 
 - OpenAI charges per token used
-- GPT-3.5-turbo is very affordable (~$0.002 per 1K tokens)
+- GPT-4 is more expensive (~$0.03 per 1K tokens) but higher quality
+- GPT-3.5-turbo is affordable (~$0.002 per 1K tokens) as fallback
 - Typical enhancement uses ~200-500 tokens
-- Cost per enhancement: ~$0.0004-$0.001
+- Cost per enhancement: ~$0.0004-$0.001 (GPT-3.5) or ~$0.006-$0.015 (GPT-4)
 
 ## 🔒 Security
 

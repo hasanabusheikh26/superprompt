@@ -441,14 +441,19 @@ async function callEnhanceAPI(text, instruction = '') {
     // Get API key from config
     const OPENAI_API_KEY = CONFIG.OPENAI_API_KEY;
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Try GPT-4 first, fallback to GPT-3.5-turbo if not available
+    let response;
+    let usedModel = CONFIG.OPENAI_MODEL;
+    
+    // First attempt with GPT-4
+    response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${OPENAI_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'gpt-3.5-turbo',
+        model: CONFIG.OPENAI_MODEL,
         messages: [
           {
             role: 'system',
@@ -487,10 +492,67 @@ Instruction: ${instruction || 'Enhance this text to be more professional and str
 Please enhance this text following the SuperPrompt guidelines. Return only the enhanced text without any additional formatting or explanations.`
           }
         ],
-        max_tokens: 1000,
-        temperature: 0.7
+        max_tokens: CONFIG.MAX_TOKENS,
+        temperature: CONFIG.TEMPERATURE
       })
     });
+
+    // If GPT-4 fails, try GPT-3.5-turbo
+    if (!response.ok && response.status === 400) {
+      console.log('🔄 GPT-4 not available, trying GPT-3.5-turbo...');
+      usedModel = CONFIG.FALLBACK_MODEL;
+      
+      response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: CONFIG.FALLBACK_MODEL,
+          messages: [
+            {
+              role: 'system',
+              content: `You are the Prompt Engine for SuperPrompt — a system that helps users craft high-performance, context-aware prompts for LLMs like ChatGPT, Claude, Gemini, and more.
+
+You must ensure all generated prompts are:
+- Clear, complete, and structured
+- Optimized for the intended tool (ChatGPT, Claude, etc.)
+- Ignoring vague, nonsensical, or contradictory inputs
+- Respecting the intent of the user without hallucinating or inventing details
+
+🛠️ Platform Context:
+SuperPrompt is a productivity-focused browser extension with cloud sync, prompt organization (tags, folders), and analytics. Users are developers, marketers, designers, researchers, and operations professionals.
+
+🎯 Primary Goals:
+1. Help users generate prompts that get better results from AI
+2. Suggest edits that clarify, refine, or expand user intent
+3. Store and tag effective prompts for re-use
+4. Reject unclear or confusing prompts, and guide users to improve them
+
+✅ Guidelines:
+- If a prompt is vague or nonsensical, reply: "This input is unclear. Can you rephrase or give more detail?"
+- If the prompt lacks a goal, suggest goal-oriented versions (e.g., "Generate social media ideas for a launch campaign.")
+- Always assume the prompt is going into an AI tool — tailor it accordingly
+- Use bullet points, context, and step-by-step formatting when helpful
+- Never respond with AI completions — only structure the user's input into a better prompt
+
+This system ensures useless or irrelevant inputs are filtered and every generated prompt is AI-usable with consistent output quality.`
+            },
+            {
+              role: 'user',
+              content: `Original text: "${text}"
+
+Instruction: ${instruction || 'Enhance this text to be more professional and structured for AI tools like ChatGPT, Claude, or Gemini.'}
+
+Please enhance this text following the SuperPrompt guidelines. Return only the enhanced text without any additional formatting or explanations.`
+            }
+          ],
+          max_tokens: CONFIG.MAX_TOKENS,
+          temperature: CONFIG.TEMPERATURE
+        })
+      });
+    }
 
     if (!response.ok) {
       throw new Error(`OpenAI API error: ${response.status} ${response.statusText}`);
@@ -499,7 +561,7 @@ Please enhance this text following the SuperPrompt guidelines. Return only the e
     const data = await response.json();
     const enhancedText = data.choices[0].message.content.trim();
     
-    console.log('✅ OpenAI enhancement completed:', enhancedText);
+    console.log(`✅ OpenAI enhancement completed with ${usedModel}:`, enhancedText);
     
     return {
       enhancedText: enhancedText,
