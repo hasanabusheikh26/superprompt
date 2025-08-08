@@ -32,9 +32,15 @@ function removeExistingIcon() {
 }
 
 function createIcon(x, y, text) {
-  const icon = document.createElement("img");
+  const icon = document.createElement("div");
   icon.className = "superprompt-icon";
-  icon.src = chrome.runtime.getURL("assets/icon.png");
+  icon.innerHTML = `
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="#10B981"/>
+      <path d="M19 15L19.5 17.5L22 18L19.5 18.5L19 21L18.5 18.5L16 18L18.5 17.5L19 15Z" fill="#10B981"/>
+      <path d="M5 15L5.5 17.5L8 18L5.5 18.5L5 21L4.5 18.5L2 18L4.5 17.5L5 15Z" fill="#10B981"/>
+    </svg>
+  `;
   icon.alt = "SuperPrompt";
   icon.style.cssText = `
     position: absolute;
@@ -106,17 +112,22 @@ function openEnhancementModal(originalText) {
     width: 100%;
     max-height: 85vh;
     overflow-y: auto;
-    box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+    box-shadow: 0 25px 50px rgba(0,0,0,0.25);
     position: relative;
     border: 1px solid #E2E8F0;
     margin-top: 20px;
+    pointer-events: auto;
   `;
 
   popup.innerHTML = `
     <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px;">
       <div style="display: flex; align-items: center; gap: 8px;">
         <div style="width: 32px; height: 32px; background: #10B981; border-radius: 8px; display: flex; align-items: center; justify-content: center;">
-          <img src="${chrome.runtime.getURL('assets/icon.png')}" style="width: 20px; height: 20px; filter: brightness(0) invert(1);" alt="SuperPrompt">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L13.09 8.26L20 9L13.09 9.74L12 16L10.91 9.74L4 9L10.91 8.26L12 2Z" fill="white"/>
+            <path d="M19 15L19.5 17.5L22 18L19.5 18.5L19 21L18.5 18.5L16 18L18.5 17.5L19 15Z" fill="white"/>
+            <path d="M5 15L5.5 17.5L8 18L5.5 18.5L5 21L4.5 18.5L2 18L4.5 17.5L5 15Z" fill="white"/>
+          </svg>
         </div>
         <h2 style="margin: 0; font-size: 20px; color: #1F2937; font-weight: 600; letter-spacing: -0.025em;">superprompt</h2>
       </div>
@@ -397,88 +408,214 @@ function openEnhancementModal(originalText) {
   document.head.appendChild(style);
 }
 
-// Enhanced API function that calls your Vercel backend
+// Local enhancement function (no API calls)
 async function callEnhanceAPI(text, instruction = '') {
-  try {
-    const response = await fetch('https://superprompt-3asmcqplb-hass-projects-b72778ab.vercel.app/api/enhance', {
-      method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-        text: text,
-        instruction: instruction || 'improve this text'
-    })
-  });
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-    }
-
-  const data = await response.json();
-    
-    if (data.success && data.enhancedText) {
-      return data.enhancedText;
-    } else {
-      throw new Error('Invalid response format');
-    }
-  } catch (error) {
-    console.error('API Enhancement failed:', error);
-    
-    // Fallback to local enhancement if API fails
-    return fallbackEnhancement(text, instruction);
-  }
+  // Simulate API delay for realistic UX
+  await new Promise(resolve => setTimeout(resolve, 1500));
+  
+  // Use local enhancement system
+  const result = localEnhancement(text, instruction);
+  
+  return {
+    enhancedText: result.enhancedText,
+    score: result.score,
+    timestamp: new Date().toISOString()
+  };
 }
 
-// Fallback enhancement function if API is unavailable
-function fallbackEnhancement(text, instruction = '') {
-  if (instruction.toLowerCase().includes('formal') || instruction.toLowerCase().includes('professional')) {
-    return `**Professional Enhancement:**
-
-${text}
-
-**Key Improvements:**
-• Enhanced professional tone and structure
-• Improved clarity and precision
-• Added appropriate business language
-• Ensured formal presentation standards
-
-This refined version maintains the core message while elevating the professional presentation and ensuring clear, authoritative communication.`;
-  } else if (instruction.toLowerCase().includes('concise') || instruction.toLowerCase().includes('brief')) {
-    const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-    const keyPoints = sentences.slice(0, 3).map(s => s.trim()).join('. ');
-    return `**Concise Version:**
-
-${keyPoints}.
-
-**Summary:** This streamlined version captures the essential information while eliminating unnecessary details for maximum impact and clarity.`;
-  } else if (instruction.toLowerCase().includes('detailed') || instruction.toLowerCase().includes('explain')) {
-    return `**Comprehensive Enhancement:**
-
-${text}
-
-**Detailed Breakdown:**
-• Context and background information
-• Key components and relationships
-• Implementation considerations
-• Expected outcomes and benefits
-
-This enhanced version provides thorough coverage while maintaining clarity and actionable insights.`;
-  } else {
-    return `**Enhanced Version:**
-
-${text}
-
-**Improvements Applied:**
-• Optimized structure and flow
-• Enhanced clarity and readability
-• Strengthened key messaging
-• Added professional polish
-
-${instruction ? `**Specific Enhancement Focus:** ${instruction}` : '**General Enhancement:** Improved overall quality and impact'}
-
-This refined version maintains your original intent while elevating the presentation and ensuring maximum effectiveness.`;
+// Local enhancement function with SuperPrompt AI system
+function localEnhancement(text, instruction = '') {
+  // Analyze input based on SuperPrompt guidelines
+  if (!text || text.trim().length < 3) {
+    return {
+      enhancedText: "This input is unclear. Can you rephrase or give more detail?",
+      score: 0
+    };
   }
+
+  // Check for vague inputs
+  const vaguePatterns = ['make this better', 'improve this', 'fix this', 'help me', 'hello', 'hi', 'can you help', 'please help'];
+  if (vaguePatterns.some(pattern => text.toLowerCase().includes(pattern)) && text.length < 20) {
+    return {
+      enhancedText: "This prompt doesn't contain a specific task or context. Please specify:\n• What you want to generate or accomplish\n• The target audience or use case\n• Any specific requirements or constraints\n\nExample: 'Create a social media campaign for a product launch' instead of 'help me with marketing'",
+      score: 0
+    };
+  }
+
+  const instructionLower = instruction.toLowerCase();
+  let enhancedText = '';
+  let score = 85; // Default score
+
+  // Determine enhancement type based on instruction
+  if (instructionLower.includes('formal') || instructionLower.includes('professional')) {
+    enhancedText = `**Professional AI Prompt:**
+
+${text}
+
+**Context & Requirements:**
+• Target audience: Professional/business context
+• Output format: Structured and formal
+• Tone: Authoritative and clear
+• Length: Comprehensive but focused
+
+**Success criteria:**
+• Delivers actionable, professional-grade results
+• Uses appropriate business language
+• Maintains clarity and precision
+• Follows industry best practices
+
+*This prompt is optimized for professional AI tools like ChatGPT, Claude, or Gemini.*`;
+    score = 92;
+  } else if (instructionLower.includes('detailed') || instructionLower.includes('comprehensive') || instructionLower.includes('explain')) {
+    enhancedText = `**Detailed AI Prompt:**
+
+${text}
+
+**Detailed Instructions:**
+• Break down the task into clear components
+• Provide comprehensive coverage of the topic
+• Include relevant context and background
+• Consider multiple perspectives or approaches
+
+**Expected Output:**
+• Thorough analysis or response
+• Step-by-step breakdown when applicable
+• Supporting details and examples
+• Actionable recommendations
+
+**Quality Standards:**
+• Evidence-based information
+• Clear structure and organization
+• Practical applicability
+• Professional presentation
+
+*Optimized for in-depth AI analysis and detailed responses.*`;
+    score = 93;
+  } else if (instructionLower.includes('concise') || instructionLower.includes('brief') || instructionLower.includes('short')) {
+    const coreRequest = text.split('.')[0] || text;
+    enhancedText = `**Concise AI Prompt:**
+
+${coreRequest}
+
+**Requirements:**
+• Keep response brief and focused
+• Prioritize key information only
+• Use bullet points or numbered lists
+• Avoid unnecessary details
+
+**Output format:**
+• Direct and actionable
+• Maximum clarity with minimum words
+• Essential points only
+
+*Optimized for quick, focused AI responses.*`;
+    score = 88;
+  } else if (instructionLower.includes('friendly') || instructionLower.includes('casual')) {
+    enhancedText = `**Conversational AI Prompt:**
+
+${text}
+
+**Tone & Style:**
+• Friendly and approachable
+• Conversational but informative
+• Warm and engaging
+• Accessible to general audience
+
+**Response Guidelines:**
+• Use relatable examples and analogies
+• Maintain enthusiasm and positivity
+• Include encouraging language
+• Make complex topics easy to understand
+
+**Success criteria:**
+• Creates connection with audience
+• Maintains professional quality
+• Easy to understand and follow
+• Engaging and memorable
+
+*This prompt creates warm, accessible AI responses while maintaining quality.*`;
+    score = 87;
+  } else if (instructionLower.includes('simple') || instructionLower.includes('easy')) {
+    enhancedText = `**Simple AI Prompt:**
+
+${text}
+
+**Simplification Requirements:**
+• Use plain, everyday language
+• Avoid jargon and technical terms
+• Break complex ideas into basic concepts
+• Include relatable examples
+
+**Output format:**
+• Short sentences and paragraphs
+• Clear, logical progression
+• Visual elements (bullets, numbers) when helpful
+• Easy to scan and understand
+
+**Target audience:**
+• General public or beginners
+• No specialized knowledge assumed
+• Accessible to all education levels
+
+*This prompt ensures AI responses are clear and accessible to everyone.*`;
+    score = 84;
+  } else if (instructionLower.includes('step') || instructionLower.includes('guide')) {
+    enhancedText = `**Step-by-Step AI Prompt:**
+
+${text}
+
+**Structure Requirements:**
+• Break down into sequential phases
+• Number each step clearly
+• Include substeps when necessary
+• Provide checkpoints and validation
+
+**Expected format:**
+• Phase-based organization
+• Clear prerequisites for each step
+• Actionable instructions
+• Expected outcomes for each phase
+
+**Success criteria:**
+• Easy to follow progression
+• No steps skipped or assumed
+• Clear completion criteria
+• Practical implementation focus
+
+*This prompt generates systematic, implementable step-by-step guidance.*`;
+    score = 90;
+  } else {
+    // General enhancement
+    enhancedText = `**Enhanced AI Prompt:**
+
+${text}
+
+**Context:**
+• Purpose: [Specify the goal or outcome needed]
+• Audience: [Define who will use this information]
+• Format: [Describe preferred response structure]
+
+**Instructions:**
+• Provide clear, actionable guidance
+• Use structured formatting (bullets, numbers, headers)
+• Include relevant examples where helpful
+• Ensure response is immediately usable
+
+**Success metrics:**
+• Clarity and usefulness of output
+• Appropriate depth and detail
+• Professional quality and accuracy
+
+${instruction ? `**Special Focus:** ${instruction}` : ''}
+
+*This prompt is structured for optimal AI tool performance across ChatGPT, Claude, Gemini, and similar platforms.*`;
+    score = 87;
+  }
+
+  return {
+    enhancedText,
+    score
+  };
 }
 
 function replaceOriginalText(newText) {
