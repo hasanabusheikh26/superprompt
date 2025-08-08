@@ -274,131 +274,278 @@ app.post('/api/enhance', async (req, res) => {
   }
 });
 
-// Enhancement helper functions
+// SuperPrompt System Prompt for AI Enhancement
+const SUPERPROMPT_SYSTEM = `You are the Prompt Engine for SuperPrompt — a system that helps users craft high-performance, context-aware prompts for LLMs like ChatGPT, Claude, Gemini, and more.
+
+You must ensure all generated prompts are:
+- Clear, complete, and structured
+- Optimized for the intended tool (ChatGPT, Claude, etc.)
+- Ignoring vague, nonsensical, or contradictory inputs
+- Respecting the intent of the user without hallucinating or inventing details
+
+🛠️ Platform Context:
+SuperPrompt is a productivity-focused browser extension with cloud sync, prompt organization (tags, folders), and analytics. Users are developers, marketers, designers, researchers, and operations professionals.
+
+🎯 Primary Goals:
+1. Help users generate prompts that get better results from AI
+2. Suggest edits that clarify, refine, or expand user intent
+3. Store and tag effective prompts for re-use
+4. Reject unclear or confusing prompts, and guide users to improve them
+
+✅ Guidelines:
+- If a prompt is vague or nonsensical, reply: "This input is unclear. Can you rephrase or give more detail?"
+- If the prompt lacks a goal, suggest goal-oriented versions (e.g., "Generate social media ideas for a launch campaign.")
+- Always assume the prompt is going into an AI tool — tailor it accordingly
+- Use bullet points, context, and step-by-step formatting when helpful
+- Never respond with AI completions — only structure the user's input into a better prompt
+
+📦 Examples:
+
+❌ Bad Input: "Can you make this better"
+✅ Your Output: "The request is unclear. What is 'this'? Please provide the original prompt or text."
+
+❌ Bad Input: "Hello there"
+✅ Your Output: "This prompt doesn't contain a task or context. Please specify what you want to generate."
+
+✔️ Input: "Write a prompt to summarize YouTube videos"
+✔️ Output:
+"Summarize this YouTube video:
+- Topic: [e.g. productivity hacks]
+- Tone: Professional and concise
+- Include: Key takeaways, timestamps, actionable advice"
+
+This system ensures useless or irrelevant inputs are filtered and every generated prompt is AI-usable with consistent output quality.`;
+
+// Enhanced enhancement functions using the SuperPrompt system
 function enhanceForFormal(text) {
-  return `**Professional Enhancement:**
+  return applySystemPrompt(text, 'formal');
+}
 
-${text}
+function applySystemPrompt(text, style = 'general', instruction = '') {
+  // Analyze the input based on SuperPrompt guidelines
+  if (!text || text.trim().length < 3) {
+    return "This input is unclear. Can you rephrase or give more detail?";
+  }
 
-**Key Improvements:**
-• Enhanced professional tone and structure
-• Improved clarity and precision
-• Added appropriate business language
-• Ensured formal presentation standards
+  // Check for vague inputs
+  const vaguePatterns = ['make this better', 'improve this', 'fix this', 'help me', 'hello', 'hi', 'can you help', 'please help'];
+  if (vaguePatterns.some(pattern => text.toLowerCase().includes(pattern)) && text.length < 20) {
+    return "This prompt doesn't contain a specific task or context. Please specify:\n• What you want to generate or accomplish\n• The target audience or use case\n• Any specific requirements or constraints\n\nExample: 'Create a social media campaign for a product launch' instead of 'help me with marketing'";
+  }
 
-This refined version maintains the core message while elevating the professional presentation and ensuring clear, authoritative communication.`;
+  // Apply SuperPrompt enhancement based on style
+  switch (style) {
+    case 'formal':
+    case 'professional':
+      return enhanceWithStructure(text, 'professional');
+    case 'detailed':
+    case 'comprehensive':
+      return enhanceWithStructure(text, 'comprehensive');
+    case 'concise':
+    case 'brief':
+      return enhanceWithStructure(text, 'concise');
+    case 'friendly':
+      return enhanceWithStructure(text, 'friendly');
+    case 'simple':
+      return enhanceWithStructure(text, 'simple');
+    case 'steps':
+      return enhanceWithStructure(text, 'steps');
+    default:
+      return enhanceWithStructure(text, 'optimized', instruction);
+  }
+}
+
+function enhanceWithStructure(text, type, instruction = '') {
+  const basePrompt = text.trim();
+  
+  switch (type) {
+    case 'professional':
+      return `**Professional AI Prompt:**
+
+${basePrompt}
+
+**Context & Requirements:**
+• Target audience: Professional/business context
+• Output format: Structured and formal
+• Tone: Authoritative and clear
+• Length: Comprehensive but focused
+
+**Success criteria:**
+• Delivers actionable, professional-grade results
+• Uses appropriate business language
+• Maintains clarity and precision
+• Follows industry best practices
+
+*This prompt is optimized for professional AI tools like ChatGPT, Claude, or Gemini.*`;
+
+    case 'comprehensive':
+      return `**Detailed AI Prompt:**
+
+${basePrompt}
+
+**Detailed Instructions:**
+• Break down the task into clear components
+• Provide comprehensive coverage of the topic
+• Include relevant context and background
+• Consider multiple perspectives or approaches
+
+**Expected Output:**
+• Thorough analysis or response
+• Step-by-step breakdown when applicable
+• Supporting details and examples
+• Actionable recommendations
+
+**Quality Standards:**
+• Evidence-based information
+• Clear structure and organization
+• Practical applicability
+• Professional presentation
+
+*Optimized for in-depth AI analysis and detailed responses.*`;
+
+    case 'concise':
+      // Extract the core request
+      const coreRequest = basePrompt.split('.')[0] || basePrompt;
+      return `**Concise AI Prompt:**
+
+${coreRequest}
+
+**Requirements:**
+• Keep response brief and focused
+• Prioritize key information only
+• Use bullet points or numbered lists
+• Avoid unnecessary details
+
+**Output format:**
+• Direct and actionable
+• Maximum clarity with minimum words
+• Essential points only
+
+*Optimized for quick, focused AI responses.*`;
+
+    case 'friendly':
+      return `**Conversational AI Prompt:**
+
+${basePrompt}
+
+**Tone & Style:**
+• Friendly and approachable
+• Conversational but informative
+• Warm and engaging
+• Accessible to general audience
+
+**Response Guidelines:**
+• Use relatable examples and analogies
+• Maintain enthusiasm and positivity
+• Include encouraging language
+• Make complex topics easy to understand
+
+**Success criteria:**
+• Creates connection with audience
+• Maintains professional quality
+• Easy to understand and follow
+• Engaging and memorable
+
+*This prompt creates warm, accessible AI responses while maintaining quality.*`;
+
+    case 'simple':
+      return `**Simple AI Prompt:**
+
+${basePrompt}
+
+**Simplification Requirements:**
+• Use plain, everyday language
+• Avoid jargon and technical terms
+• Break complex ideas into basic concepts
+• Include relatable examples
+
+**Output format:**
+• Short sentences and paragraphs
+• Clear, logical progression
+• Visual elements (bullets, numbers) when helpful
+• Easy to scan and understand
+
+**Target audience:**
+• General public or beginners
+• No specialized knowledge assumed
+• Accessible to all education levels
+
+*This prompt ensures AI responses are clear and accessible to everyone.*`;
+
+    case 'steps':
+      return `**Step-by-Step AI Prompt:**
+
+${basePrompt}
+
+**Structure Requirements:**
+• Break down into sequential phases
+• Number each step clearly
+• Include substeps when necessary
+• Provide checkpoints and validation
+
+**Expected format:**
+• Phase-based organization
+• Clear prerequisites for each step
+• Actionable instructions
+• Expected outcomes for each phase
+
+**Success criteria:**
+• Easy to follow progression
+• No steps skipped or assumed
+• Clear completion criteria
+• Practical implementation focus
+
+*This prompt generates systematic, implementable step-by-step guidance.*`;
+
+    default: // optimized
+      return `**Enhanced AI Prompt:**
+
+${basePrompt}
+
+**Context:**
+• Purpose: [Specify the goal or outcome needed]
+• Audience: [Define who will use this information]
+• Format: [Describe preferred response structure]
+
+**Instructions:**
+• Provide clear, actionable guidance
+• Use structured formatting (bullets, numbers, headers)
+• Include relevant examples where helpful
+• Ensure response is immediately usable
+
+**Success metrics:**
+• Clarity and usefulness of output
+• Appropriate depth and detail
+• Professional quality and accuracy
+
+${instruction ? `**Special Focus:** ${instruction}` : ''}
+
+*This prompt is structured for optimal AI tool performance across ChatGPT, Claude, Gemini, and similar platforms.*`;
+  }
 }
 
 function enhanceForFriendly(text) {
-  return `Hey there! 😊
-
-Here's a more friendly version of your text:
-
-${text}
-
-I've made it more conversational and approachable while keeping all the important information. The tone is now warmer and more engaging, perfect for connecting with your audience on a personal level!
-
-Hope this helps make your message more relatable! 🌟`;
+  return applySystemPrompt(text, 'friendly');
 }
 
 function enhanceForConcise(text) {
-  // Extract key points and make concise
-  const sentences = text.split(/[.!?]+/).filter(s => s.trim().length > 0);
-  const keyPoints = sentences.slice(0, 3).map(s => s.trim()).join('. ');
-  
-  return `**Concise Version:**
-
-${keyPoints}.
-
-**Summary:** This streamlined version captures the essential information while eliminating unnecessary details for maximum impact and clarity.`;
+  return applySystemPrompt(text, 'concise');
 }
 
 function enhanceForDetailed(text) {
-  return `**Comprehensive Analysis:**
-
-${text}
-
-**Detailed Breakdown:**
-
-1. **Context & Background:**
-   Understanding the full scope of this topic requires considering multiple factors and perspectives.
-
-2. **Key Components:**
-   • Primary elements and their relationships
-   • Supporting details and evidence
-   • Practical implications and applications
-
-3. **Implementation Considerations:**
-   • Step-by-step approach recommendations
-   • Potential challenges and solutions
-   • Best practices and optimization strategies
-
-4. **Expected Outcomes:**
-   • Immediate benefits and results
-   • Long-term impact and sustainability
-   • Success metrics and evaluation criteria
-
-This comprehensive enhancement provides thorough coverage while maintaining clarity and actionable insights.`;
+  return applySystemPrompt(text, 'detailed');
 }
 
 function enhanceForSimple(text) {
-  return `**Simple Explanation:**
-
-${text}
-
-**In Easy Terms:**
-Think of this like [simple analogy]. The main idea is straightforward - we're focusing on the most important parts and explaining them in a way that's easy to understand.
-
-**Quick Summary:**
-• Main point: [Core concept]
-• Why it matters: [Benefit/importance]
-• What to do: [Simple action]
-
-This version breaks down complex ideas into bite-sized, easy-to-follow pieces! 🎯`;
+  return applySystemPrompt(text, 'simple');
 }
 
 function enhanceForSteps(text) {
-  return `**Step-by-Step Guide:**
-
-Based on: "${text}"
-
-**Phase 1: Preparation**
-1. Analyze requirements and objectives
-2. Gather necessary resources and tools
-3. Set up optimal working environment
-
-**Phase 2: Implementation** 
-1. Begin with core functionality
-2. Build and test incrementally
-3. Integrate components systematically
-
-**Phase 3: Optimization**
-1. Review and refine approach
-2. Test thoroughly and validate results
-3. Document process and outcomes
-
-**Phase 4: Completion**
-1. Finalize all components
-2. Conduct final quality checks
-3. Deploy and monitor results
-
-This systematic approach ensures thorough execution and successful outcomes! ✅`;
+  return applySystemPrompt(text, 'steps');
 }
 
 function enhanceGeneral(text, instruction = '') {
-  return `**Enhanced Version:**
-
-${text}
-
-**Improvements Applied:**
-• Optimized structure and flow
-• Enhanced clarity and readability
-• Strengthened key messaging
-• Added professional polish
-
-${instruction ? `**Specific Enhancement Focus:** ${instruction}` : '**General Enhancement:** Improved overall quality and impact'}
-
-This refined version maintains your original intent while elevating the presentation and ensuring maximum effectiveness.`;
+  return applySystemPrompt(text, 'general', instruction);
 }
 
 // Health check
