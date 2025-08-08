@@ -1,4 +1,5 @@
-// SuperPrompt - Simple Text Enhancement
+// SuperPrompt - Local AI Text Enhancement (v2.0)
+console.log('🚀 SuperPrompt Extension loaded - Local AI Version');
 let popup;
 let selectedRange;
 
@@ -410,11 +411,15 @@ function openEnhancementModal(originalText) {
 
 // Local enhancement function (no API calls)
 async function callEnhanceAPI(text, instruction = '') {
+  console.log('🔧 Using LOCAL enhancement system (no API calls)');
+  
   // Simulate API delay for realistic UX
   await new Promise(resolve => setTimeout(resolve, 1500));
   
   // Use local enhancement system
   const result = localEnhancement(text, instruction);
+  
+  console.log('✅ Local enhancement completed:', result);
   
   return {
     enhancedText: result.enhancedText,
